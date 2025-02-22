@@ -1,0 +1,159 @@
+[build-system]
+build-backend = "poetry.core.masonry.api"
+requires = [ "poetry-core>=1.0.0" ]
+
+[tool.poetry]
+name = "aoiro"
+version = "0.0.0"
+description = "CSV-based 青色申告 CLI app"
+authors = [ "34j <34j.github@proton.me>" ]
+license = "GNU General Public License v3"
+readme = "README.md"
+repository = "https://github.com/34j/aoiro"
+documentation = "https://aoiro.readthedocs.io"
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Intended Audience :: Developers",
+  "Natural Language :: English",
+  "Operating System :: OS Independent",
+  "Topic :: Software Development :: Libraries",
+]
+packages = [
+  { include = "aoiro", from = "src" },
+]
+
+[tool.poetry.urls]
+"Bug Tracker" = "https://github.com/34j/aoiro/issues"
+"Changelog" = "https://github.com/34j/aoiro/blob/main/CHANGELOG.md"
+
+[tool.poetry.scripts]
+aoiro = "aoiro.cli:app"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+rich = ">=10"
+typer = { extras = [ "all" ], version = "^0.9.0" }
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0.0"
+pytest-cov = "^5.0.0"
+
+[tool.poetry.group.docs]
+optional = true
+
+[tool.poetry.group.docs.dependencies]
+myst-parser = { version = ">=0.16", python = ">=3.11" }
+sphinx = { version = ">=4.0", python = ">=3.11" }
+furo = { version = ">=2023.5.20", python = ">=3.11" }
+sphinx-autobuild = { version = ">=2024.0.0", python = ">=3.11" }
+
+[tool.ruff]
+target-version = "py39"
+line-length = 88
+lint.select = [
+  "B",   # flake8-bugbear
+  "D",   # flake8-docstrings
+  "C4",  # flake8-comprehensions
+  "S",   # flake8-bandit
+  "F",   # pyflake
+  "E",   # pycodestyle
+  "W",   # pycodestyle
+  "UP",  # pyupgrade
+  "I",   # isort
+  "RUF", # ruff specific
+]
+lint.ignore = [
+  "D203", # 1 blank line required before class docstring
+  "D212", # Multi-line docstring summary should start at the first line
+  "D100", # Missing docstring in public module
+  "D104", # Missing docstring in public package
+  "D107", # Missing docstring in `__init__`
+  "D401", # First line of docstring should be in imperative mood
+]
+lint.per-file-ignores."conftest.py" = [ "D100" ]
+lint.per-file-ignores."docs/conf.py" = [ "D100" ]
+lint.per-file-ignores."setup.py" = [ "D100" ]
+lint.per-file-ignores."tests/**/*" = [
+  "D100",
+  "D101",
+  "D102",
+  "D103",
+  "D104",
+  "S101",
+]
+lint.isort.known-first-party = [ "aoiro", "tests" ]
+
+[tool.pytest.ini_options]
+addopts = """\
+    -v
+    -Wdefault
+    --cov=aoiro
+    --cov-report=term
+    --cov-report=xml
+    """
+pythonpath = [ "src" ]
+
+[tool.coverage.run]
+branch = true
+
+[tool.coverage.report]
+exclude_lines = [
+  "pragma: no cover",
+  "@overload",
+  "if TYPE_CHECKING",
+  "raise NotImplementedError",
+  'if __name__ == "__main__":',
+]
+
+[tool.mypy]
+check_untyped_defs = true
+disallow_any_generics = true
+disallow_incomplete_defs = true
+disallow_untyped_defs = true
+mypy_path = "src/"
+no_implicit_optional = true
+show_error_codes = true
+warn_unreachable = true
+warn_unused_ignores = true
+exclude = [
+  'docs/.*',
+  'setup.py',
+]
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+allow_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = "docs.*"
+ignore_errors = true
+
+[tool.semantic_release]
+version_toml = [ "pyproject.toml:tool.poetry.version" ]
+version_variables = [
+  "src/aoiro/__init__.py:__version__",
+  "docs/conf.py:release",
+]
+build_command = "pip install poetry && poetry build"
+
+[tool.semantic_release.changelog]
+exclude_commit_patterns = [
+  '''chore(?:\([^)]*?\))?: .+''',
+  '''ci(?:\([^)]*?\))?: .+''',
+  '''refactor(?:\([^)]*?\))?: .+''',
+  '''style(?:\([^)]*?\))?: .+''',
+  '''test(?:\([^)]*?\))?: .+''',
+  '''build\((?!deps\): .+)''',
+  '''Merged? .*''',
+  '''Initial [Cc]ommit.*''', # codespell:ignore
+]
+
+[tool.semantic_release.changelog.environment]
+keep_trailing_newline = true
+
+[tool.semantic_release.branches.main]
+match = "main"
+
+[tool.semantic_release.branches.noop]
+match = "(?!main$)"
+prerelease = true
