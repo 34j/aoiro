@@ -1,8 +1,10 @@
 from collections.abc import Sequence
 from decimal import Decimal
+from itertools import chain
 from pathlib import Path
-from typing import Any, Protocol, TypeVar
+from typing import Any, Literal, Protocol, TypeVar
 
+import attrs
 import numpy as np
 import pandas as pd
 from dateparser import parse
@@ -24,6 +26,62 @@ class MultiLedgerLine(Protocol[Account, Currency]):
     date: pd.Timestamp
     debit: Sequence[tuple[Account, Decimal, Currency]]
     credit: Sequence[tuple[Account, Decimal, Currency]]
+
+
+@attrs.frozen(kw_only=True)
+class LedgerLineImpl(LedgerLine[Account, Currency]):
+    date: pd.Timestamp
+    amount: Decimal
+    currency: Currency
+    debit_account: Account
+    credit_account: Account
+
+
+@attrs.frozen(kw_only=True, auto_detect=True)
+class MultiLedgerLineImpl(MultiLedgerLine[Account, Currency]):
+    date: pd.Timestamp
+    debit: Sequence[tuple[Account, Decimal, Currency]]
+    credit: Sequence[tuple[Account, Decimal, Currency]]
+
+
+def multiledger_line_to_ledger_line(
+    line: MultiLedgerLine[Account, Currency],
+) -> Sequence[LedgerLine[Account | Literal["諸口"], Currency]]:
+    if len(line.debit) == len(line.credit) == 1:
+        return [
+            LedgerLineImpl(
+                date=line.date,
+                amount=line.debit[0][1],
+                currency=line.debit[0][2],
+                debit_account=line.debit[0][0],
+                credit_account=line.credit[0][0],
+            )
+        ]
+    return [  # type: ignore
+        LedgerLineImpl(
+            date=line.date,
+            amount=amount,
+            currency=currency,
+            debit_account=debit_account,
+            credit_account="諸口",
+        )
+        for debit_account, amount, currency in line.debit
+    ] + [
+        LedgerLineImpl(
+            date=line.date,
+            amount=amount,
+            currency=currency,
+            debit_account="諸口",
+            credit_account=credit_account,
+        )
+        for credit_account, amount, currency in line.credit
+    ]
+
+
+def multiledger_to_ledger(
+    lines: Sequence[MultiLedgerLine[Account, Currency]],
+) -> Sequence[LedgerLine[Account | Literal["諸口"], Currency]]:
+    return list(chain(*[multiledger_line_to_ledger_line(line) for line in lines]))
 
 
 def withholding_tax(amount: NDArray[Any]) -> NDArray[Any]:
@@ -84,11 +142,11 @@ def generate_ledger(
     ledger_lines: list[MultiLedgerLine[Any, Any]] = []
     for d, row in df.iterrows():
         ledger_lines.append(
-            {  # type: ignore
-                "date": d,
-                "debit": [("売掛金", row["金額"], row["通貨"])],
-                "credit": [("売上", row["金額"], row["通貨"])],
-            }
+            MultiLedgerLineImpl(
+                date=d,
+                debit=[("事業主貸", row["金額"], row["通貨"])],
+                credit=[("売上", row["金額"], row["通貨"])],
+            )
         )
     for (_, d, c), df_ in df.groupby(["取引先", "振込日", "通貨"]):
         amount = df_["金額"].sum()
@@ -104,11 +162,7 @@ def generate_ledger(
                 raise ValueError("通貨が異なる取引に源泉徴収が含まれています。")
             debit = [("事業主貸", amount, c)]
         ledger_lines.append(
-            {  # type: ignore
-                "date": d,
-                "debit": debit,
-                "credit": [("売掛金", amount, c)],
-            }
+            MultiLedgerLineImpl(date=d, debit=debit, credit=[("売掛金", amount, c)])
         )
     if (df["発生日"] > df["振込日"]).any():
         raise ValueError("発生日が振込日より後の取引があります。")
