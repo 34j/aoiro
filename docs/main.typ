@@ -24,9 +24,11 @@
 #let journalmultiline = $"複合仕訳"$
 #let journal = $"単一仕訳帳"$
 #let journalmulti = $"複合仕訳帳"$
+#let adjustedjournal = $"決算整理済仕訳帳"$
 #let decompmin = $op("DecompMin")$
 #let decompsundry = $op("DecompSundry")$
 #let currency = $"Currency"$
+#let suma = $op("SumA")$
 
 #let date = $"Date"$
 
@@ -46,9 +48,9 @@
     - $accounting := assets union liabilities union netassets union profit union loss union {"諸口"}$
 - (勘定科目の全順序)$accounting$に適当な全順序$<$を導入する。
 - (通貨単位)$currency := {"\" \""} union { x"年取得,定"vec("額","率")"法"n"年" | x in ZZ, n in NN } union {"USD", ..., } union {"トヨタ7203", ...} union {"BTC", ...}$
-- (仕訳要素)$journalitem := accounting times (NN times currency)$ ($currency$をいれるとdouble-entry *multidimensional* accounting / *vectorized* double-entry accountingになる)
+- (仕訳要素)$journalitem := accounting times (NN times currency)$ ($currency$が一点集合でないときdouble-entry *multidimensional* accounting @ellerman_double_1986 / *vectorized* double-entry accountingになる)
 //- (仕訳要素集合)$journalitems := {x in 2^journalitem | 0 < abs(x) < infinity}$
-- (単一仕訳)$journalline := date times {v_1 = v_2 | ((d, v_1), (d, v_2)) in journalitem^2}$
+- (単一仕訳)$journalline := date times {v_1 = v_2 | ((d, v_1), (d, v_2)) in journalitem^2} approx date times accounting^2 times (NN times currency)$
 - (可能な勘定科目の組)ほとんどの組み合わせが可能であるため、本定式化では可能な勘定科目の組み合わせを考えないものとする。
     #table(columns: 6, rows: 6,
     "借方/貸方", "資産", "負債", "純資産", "収益", "費用",
@@ -67,6 +69,8 @@
   - $decompsundry$: このような$2^journalline$で要素数が最小のものを返す関数は同型
 - (単一仕訳帳)$journal := {abs(J) < infinity | J in 2^journal}$
 - (複合仕訳帳)$journalmultiline := {abs(J) < infinity | J in 2^journalmultiline}$
-- (仕訳帳の性質)$forall {J_i | i in I} in journal. sum_i$
+- (複合仕訳帳の分解)省略。
+- (単一仕訳帳の合計額)$suma: journal times accounting -> ZZ, ({(d_i, c_i, v_i) | i in I}, a) |-> (sum_i (1_(d_i = a) - 1_(c_i = a)) times cases(1 &(a in assets, profit), -1 &("otherwise"))$
+- (決算整理済仕訳帳)$adjustedjournal := {J in journal | ("現金化不足")suma(J, "現金過不足") = 0 and ("銀行勘定調整") suma(J, "当座預金") >= 0 and "繰越商品,"}$
 
 #bibliography("main.bib")
