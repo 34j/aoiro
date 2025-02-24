@@ -26,6 +26,7 @@
 #let journalmulti = $"複合仕訳帳"$
 #let decompmin = $op("DecompMin")$
 #let decompsundry = $op("DecompSundry")$
+#let currency = $"Currency"$
 
 #let date = $"Date"$
 
@@ -44,18 +45,19 @@
     - $loss := $#mkset("費用")
     - $accounting := assets union liabilities union netassets union profit union loss union {"諸口"}$
 - (勘定科目の全順序)$accounting$に適当な全順序$<$を導入する。
-- (仕訳要素)$journalitem := accounting times NN$
+- (通貨単位)$currency := {"\" \""} union { x"年取得,定"vec("額","率")"法"n"年" | x in ZZ, n in NN } union {"USD", ..., } union {"トヨタ7203", ...} union {"BTC", ...}$
+- (仕訳要素)$journalitem := accounting times (NN times currency)$ ($currency$をいれるとdouble-entry *multidimensional* accounting / *vectorized* double-entry accountingになる)
 //- (仕訳要素集合)$journalitems := {x in 2^journalitem | 0 < abs(x) < infinity}$
 - (単一仕訳)$journalline := date times {v_1 = v_2 | ((d, v_1), (d, v_2)) in journalitem^2}$
 - (可能な勘定科目の組)ほとんどの組み合わせが可能であるため、本定式化では可能な勘定科目の組み合わせを考えないものとする。
-#table(columns: 6, rows: 6,
-"借方/貸方", "資産", "負債", "純資産", "収益", "費用",
-"資産", "当座預金/普通預金", "当座預金/借入金", "当座預金/資本金", "当座預金/売上", "(逆仕訳)",
-"負債", "買掛金/当座預金", "買掛金/支払手形", "買掛金/資本金?", "前受金/売上(相殺)", "(逆仕訳)",
-"純資産", "(逆仕訳)", "(逆仕訳)", "繰越利益剰余金/利益準備金", "✗(損益を経由)", "✗(損益を経由)",
-"収益", "(逆仕訳)", "(逆仕訳)", "✗(損益を経由)", "相殺(物々交換)", [相殺・修正(勘定科目変更) #cite(<ayamari_2025>, supplement: "p.29")],
-"費用", "仕入/当座預金", "仕入/買掛金", "✗(損益を経由)", "相殺・修正", "相殺"
-)
+    #table(columns: 6, rows: 6,
+    "借方/貸方", "資産", "負債", "純資産", "収益", "費用",
+    "資産", "当座預金/普通預金", "当座預金/借入金", "当座預金/資本金", "当座預金/売上", "(逆仕訳)",
+    "負債", "買掛金/当座預金", "買掛金/支払手形", "買掛金/資本金?", "前受金/売上(相殺)", "(逆仕訳)",
+    "純資産", "(逆仕訳)", "(逆仕訳)", "繰越利益剰余金/利益準備金", "✗(損益を経由)", "✗(損益を経由)",
+    "収益", "(逆仕訳)", "(逆仕訳)", "✗(損益を経由)", "相殺(物々交換)", [相殺・修正(勘定科目変更) #cite(<ayamari_2025>, supplement: "p.29")],
+    "費用", "仕入/当座預金", "仕入/買掛金", "✗(損益を経由)", "相殺・修正", "相殺"
+    )
 - (複合仕訳)$journalmultiline := date times {0 < abs(I) < infinity and 0 < abs(J) < infinity and sum_i v_i = sum_j v'_j | ({(d_i, v_i) | i in I}, {(c_j, v'_j) | j in J}) in (2^journalitem)^2}$
 - (複合仕訳の最小の分解)
   - $forall ({(d_i, v_i) | i in I}, {(c_j, v'_j) | j in J}) in journalmultiline. exists {((d''_k, v''_k), (c''_k, v''_k)) | k in K} in 2^journalline. (forall a in accounting. sum_i 1_(c_(i) = a) v_i = sum_k 1_(c''_k = a) v''_k and sum_j 1_(c_(j) = a) v'_j = sum_k 1_(c''_k = a) v''_k)$
