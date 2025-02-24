@@ -24,11 +24,14 @@
 #let journalmultiline = $"複合仕訳"$
 #let journal = $"単一仕訳帳"$
 #let journalmulti = $"複合仕訳帳"$
+#let adjustmentjournal = $"決算整理仕訳帳"$
 #let adjustedjournal = $"決算整理済仕訳帳"$
 #let decompmin = $op("DecompMin")$
 #let decompsundry = $op("DecompSundry")$
 #let currency = $"Currency"$
 #let suma = $op("SumA")$
+#let multiset = $op("MultiSet")$
+#let finitemultiset = $op("FiniteMultiSet")$
 
 #let date = $"Date"$
 
@@ -61,16 +64,38 @@
     "費用", "仕入/当座預金", "仕入/買掛金", "✗(損益を経由)", "相殺・修正", "相殺"
     )
 - (複合仕訳)$journalmultiline := date times {0 < abs(I) < infinity and 0 < abs(J) < infinity and sum_i v_i = sum_j v'_j | ({(d_i, v_i) | i in I}, {(c_j, v'_j) | j in J}) in (2^journalitem)^2}$
-- (複合仕訳の最小の分解)
+- (複合仕訳の最小の分解 @bunkai_terada_2023)
   - $forall ({(d_i, v_i) | i in I}, {(c_j, v'_j) | j in J}) in journalmultiline. exists {((d''_k, v''_k), (c''_k, v''_k)) | k in K} in 2^journalline. (forall a in accounting. sum_i 1_(c_(i) = a) v_i = sum_k 1_(c''_k = a) v''_k and sum_j 1_(c_(j) = a) v'_j = sum_k 1_(c''_k = a) v''_k)$
   - $decompmin$: このような$2^journalline$で要素数が最小のものを返す関数は同型でない
-- (複合仕訳の諸口による分解)
+- (複合仕訳の諸口による分解 @bunkai_terada_2023)
   - $forall ({(d_i, v_i) | i in I}, {(c_j, v'_j) | j in J}) in journalmultiline. exists {((d''_k, v''_k), (c''_k, v''_k)) | k in K, (d''_k = "諸口") or (c''_k = "諸口")} in 2^journalline. (forall i in I. sum_i' 1_(c_(i') = c_i) v_i = sum_k 1_(c''_k = c_i) v''_k) and (forall j in J. sum_j' 1_(c_(j') = c_j) v'_j = sum_k 1_(c''_k = c_j) v''_k)$
   - $decompsundry$: このような$2^journalline$で要素数が最小のものを返す関数は同型
-- (単一仕訳帳)$journal := {abs(J) < infinity | J in 2^journal}$
-- (複合仕訳帳)$journalmultiline := {abs(J) < infinity | J in 2^journalmultiline}$
+- (単一仕訳帳)$journal := finitemultiset(journalline)$
+- (複合仕訳帳)$journalmultiline := finitemultiset(journalmultiline)$
 - (複合仕訳帳の分解)省略。
 - (単一仕訳帳の合計額)$suma: journal times accounting -> ZZ, ({(d_i, c_i, v_i) | i in I}, a) |-> (sum_i (1_(d_i = a) - 1_(c_i = a)) times cases(1 &(a in assets, profit), -1 &("otherwise"))$
-- (決算整理済仕訳帳)$adjustedjournal := {J in journal | ("現金化不足")suma(J, "現金過不足") = 0 and ("銀行勘定調整") suma(J, "当座預金") >= 0 and "繰越商品,"}$
+- (決算整理仕訳帳 @kessanseiri_eurekapu_2025 #cite(<yoseda_2025>, supplement: "p.263-264"))
+  $
+  adjustmentjournal&: journal^2 -> journal, \
+  L, J &|-> cases(
+  emptyset &(suma(J, "現金過不足") = 0),
+  ("現金過不足", "雑益", suma(J, "")) &(suma(J, "現金過不足") > 0),
+  ("雑損", "現金過不足", suma(J, "現金過不足")) &(suma(J, "現金過不足") < 0)
+  ) \
+  &+ cases(("当座預金", "借入金 or 当座借越", -suma(J, "当座預金")) &suma(J, "当座預金") < 0) \
+  &+ ("仕入", "繰越商品", "仕入れたうち売っていないものの仕入価格の合計を思い出す") \
+  &+ ("繰越商品", "仕入", suma(L, "繰越商品")) \
+  &+ ("貸倒引当金繰入", "貸倒引当金", suma(J, "貸倒引当金")) \
+  &+ ("減価償却費", "減価償却累計額", "計算省略") \
+  &+ ("貯蔵品", vec("通信費","租税公課"), "未使用分を思い出す") \
+  &+ (vec("未収収益","前払費用"), ?, "思い出す") \
+  &+ (?, vec("前受収益", "未払費用"), "思い出す") \
+  &+ ("仮受消費税", "諸口", suma(J, "仮受消費税")) \
+  &+ ("諸口", "仮払消費税", suma(J, "仮払消費税")) \
+  &+ ("諸口", "未払消費税", suma(J, "仮受消費税") - suma(J, "仮払消費税")) \
+  &+ ("法人税等", "諸口", "範囲外") \
+  &+ ("諸口", "仮払法人税等", suma(J, "仮払法人税等")) \
+  &+ ("諸口", "未払法人税等", "範囲外" - suma(J, "仮払法人税等")) \
+  $
 
 #bibliography("main.bib")
