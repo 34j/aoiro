@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from decimal import Decimal
+from decimal import ROUND_DOWN, Decimal, localcontext
 from itertools import chain
 from pathlib import Path
 from typing import Any, Literal, Protocol, TypeVar
@@ -85,13 +85,13 @@ def multiledger_to_ledger(
 
 
 def withholding_tax(amount: NDArray[Any]) -> NDArray[Any]:
-    return np.floor(
-        np.where(
+    with localcontext() as ctx:
+        ctx.rounding = ROUND_DOWN
+        return np.where(
             amount > 1000000,
-            1000000 * Decimal("0.1021") + (amount - 1000000) * Decimal("0.2042"),
-            amount * Decimal("0.1021"),
+            round(1000000 * Decimal("0.1021") + (amount - 1000000) * Decimal("0.2042")),
+            round(amount * Decimal("0.1021")),
         )
-    )
 
 
 def generate_ledger(
@@ -166,11 +166,4 @@ def generate_ledger(
         )
     if (df["発生日"] > df["振込日"]).any():
         raise ValueError("発生日が振込日より後の取引があります。")
-    with pd.option_context("display.max_rows", None, "display.max_columns", None):
-        print(df)
-        print(
-            df[df["振込日"].dt.year == 2024]
-            .groupby("取引先")[["金額", "源泉徴収"]]
-            .sum()
-        )
     return ledger_lines
