@@ -46,9 +46,9 @@ def generate_ledger(path: Path) -> Sequence[MultiLedgerLine[Any, Any]]:
     df = pd.concat(dfs)
     del dfs
     for k in ["発生日", "振込日"]:
-        df[k] = pd.to_datetime(df[k].map(parse))
-    with pd.option_context("display.max_rows", None, "display.max_columns", None):
-        print(df, df.info())
+        df[k] = pd.to_datetime(
+            df[k].map(lambda s: parse(s, settings={"PREFER_DAY_OF_MONTH": "last"}))
+        )
     df["通貨"] = (
         df["金額"]
         .astype(str)
@@ -61,12 +61,14 @@ def generate_ledger(path: Path) -> Sequence[MultiLedgerLine[Any, Any]]:
     )
     df.fillna({"源泉徴収": 0, "手数料": 0}, inplace=True)
     df.loc[df["源泉徴収"] == True, "源泉徴収"] = (
-        (df.loc[df["源泉徴収"] == True, "金額"].astype(float) * 10.24 / 100)
-        .round()
-        .astype(int)
-    )
+        df.loc[df["源泉徴収"] == True, "金額"].astype(float) * 10.21 / 100
+    ).astype(int)
     df.set_index("発生日", inplace=True)
     with pd.option_context("display.max_rows", None, "display.max_columns", None):
         print(df)
-        print(df.groupby("取引先")["源泉徴収"].sum())
+        print(
+            df[df.index.to_series().dt.year == 2024]
+            .groupby("取引先")[["金額", "源泉徴収"]]
+            .sum()
+        )
     return []
