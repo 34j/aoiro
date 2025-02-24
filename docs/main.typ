@@ -76,7 +76,7 @@
 - (単一仕訳帳の合計額)$suma: journal times accounting -> ZZ, ({(d_i, c_i, v_i) | i in I}, a) |-> (sum_i (1_(d_i = a) - 1_(c_i = a)) times cases(1 &(a in assets, profit), -1 &("otherwise"))$
 - (決算整理仕訳帳 @kessanseiri_eurekapu_2025 #cite(<yoseda_2025>, supplement: "p.263-264"))
   $
-  adjustmentjournal&: journal^2 -> journal, \
+  adjustmentjournal_1&: journal^2 -> journal, \
   L, J &|-> cases(
   emptyset &(suma(J, "現金過不足") = 0),
   ("現金過不足", "雑益", suma(J, "")) &(suma(J, "現金過不足") > 0),
@@ -93,9 +93,11 @@
   &+ ("仮受消費税", "諸口", suma(J, "仮受消費税")) \
   &+ ("諸口", "仮払消費税", suma(J, "仮払消費税")) \
   &+ ("諸口", "未払消費税", suma(J, "仮受消費税") - suma(J, "仮払消費税")) \
-  &+ ("法人税等", "諸口", "範囲外") \
-  &+ ("諸口", "仮払法人税等", suma(J, "仮払法人税等")) \
-  &+ ("諸口", "未払法人税等", "範囲外" - suma(J, "仮払法人税等")) \
+//   &+ ("法人税等", "諸口", "範囲外") \
+//   &+ ("諸口", "仮払法人税等", suma(J, "仮払法人税等")) \
+//   &+ ("諸口", "未払法人税等", "範囲外" - suma(J, "仮払法人税等")) \
+//   adjustmentjournal_2 &: journal -> journal, \
+//   J &|->
   $
 
 #bibliography("main.bib")
