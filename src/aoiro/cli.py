@@ -1,12 +1,12 @@
+from pathlib import Path
+
 import typer
-from rich import print
 
-from .main import add
+from ._main import generate_ledger
 
-app = typer.Typer()
+app = typer.Typer(pretty_exceptions_enable=False)
 
 
 @app.command()
-def main(n1: int, n2: int) -> None:
-    """Add the arguments and print the result."""
-    print(add(n1, n2))
+def _main(path: Path) -> None:
+    generate_ledger(path)
