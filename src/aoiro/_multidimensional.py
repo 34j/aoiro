@@ -71,10 +71,11 @@ def multidimensional_ledger_to_ledger(
                 debit.append((a, v, c))
                 continue
             price_current = Decimal(str(prices_[c][line.date]))
+            price_real = Decimal(0)
             if a in credit_balance.keys():
                 while v > 0:
                     vtemp = max(v, credit_balance[a][c][0][1])
-                    profit -= vtemp * credit_balance[a][c][0][0]
+                    price_real += vtemp * credit_balance[a][c][0][0]
                     v -= vtemp
 
                     # update credit balance
@@ -86,8 +87,9 @@ def multidimensional_ledger_to_ledger(
                         credit_balance[a][c].pop(0)
             else:
                 debit_balance[a][c].append((price_current, v))
-                profit -= v * price_current
-            debit.append((a, v * price_current, ""))
+                price_real = v * price_current
+            debit.append((a, price_real, ""))
+            profit -= price_real
         credit: list[
             tuple[Account | Literal["為替差損益"], Decimal, Currency | Literal[""]]
         ] = []
@@ -96,10 +98,11 @@ def multidimensional_ledger_to_ledger(
                 credit.append((a, v, c))
                 continue
             price_current = Decimal(str(prices_[c][line.date]))
+            price_real = Decimal(0)
             if a in debit_balance.keys():
                 while v > 0:
                     vtemp = max(v, debit_balance[a][c][0][1])
-                    profit += vtemp * debit_balance[a][c][0][0]
+                    price_real += vtemp * debit_balance[a][c][0][0]
                     v -= vtemp
 
                     # update debit balance
@@ -111,12 +114,13 @@ def multidimensional_ledger_to_ledger(
                         debit_balance[a][c].pop(0)
             else:
                 credit_balance[a][c].append((price_current, v))
-                profit += v * price_current
-            credit.append((a, v * price_current, ""))
+                price_real = v * price_current
+            credit.append((a, price_real, ""))
+            profit += price_real
         if profit > 0:
-            credit.append(("為替差損益", profit, ""))
+            debit.append(("為替差損益", profit, ""))
         elif profit < 0:
-            debit.append(("為替差損益", -profit, ""))
+            credit.append(("為替差損益", -profit, ""))
         lines_new.append(
             MultiLedgerLineImpl(date=line.date, debit=debit, credit=credit)
         )
