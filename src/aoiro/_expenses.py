@@ -5,7 +5,7 @@ from typing import Any
 from ._ledger import MultiLedgerLine, MultiLedgerLineImpl, read_all_dataframes
 
 
-def generate_ledger(
+def ledger_from_expenses(
     path: Path,
 ) -> Sequence[MultiLedgerLine[Any, Any]]:
     df = read_all_dataframes(path / "expenses")

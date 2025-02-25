@@ -99,7 +99,8 @@ def read_all_dataframes(path: Path) -> pd.DataFrame:
         df["金額"]
         .astype(str)
         .str.replace(r"[\d.]", "", regex=True)
-        .replace("$", "USD", regex=False)
+        .str.strip()
+        .str.replace("$", "USD", regex=False)
         .astype(str)
     )
     df["金額"] = (
