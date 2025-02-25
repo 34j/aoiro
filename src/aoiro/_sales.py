@@ -49,13 +49,6 @@ def ledger_from_sales(
                 credit=[("売上", row["金額"], row["通貨"])],
             )
         )
-        ledger_lines.append(
-            MultiLedgerLineImpl(
-                date=row["振込日"],
-                debit=[("事業主貸", row["金額"], row["通貨"])],
-                credit=[("売掛金", row["金額"], row["通貨"])],
-            )
-        )
     for (_, d, c), df_ in df.groupby(["取引先", "振込日", "通貨"]):
         amount = df_["金額"].sum()
         if c == "":

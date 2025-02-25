@@ -41,6 +41,20 @@ class MultiLedgerLineImpl(MultiLedgerLine[Account, Currency]):
     debit: Sequence[tuple[Account, Decimal, Currency]]
     credit: Sequence[tuple[Account, Decimal, Currency]]
 
+    def __repr__(self) -> str:
+        date = pd.Series([self.date], name="date")
+        debit = pd.DataFrame(
+            self.debit, columns=["debit_account", "amount", "currency"]
+        )
+        credit = pd.DataFrame(
+            self.credit, columns=["credit_account", "amount", "currency"]
+        )
+        return (
+            pd.concat([date, debit, credit], axis=1)
+            .fillna("")
+            .to_string(index=False, header=False)
+        )
+
 
 def multiledger_line_to_ledger_line(
     line: MultiLedgerLine[Account, Currency],
