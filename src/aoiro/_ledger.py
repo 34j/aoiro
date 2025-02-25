@@ -1,4 +1,4 @@
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from decimal import Decimal
 from itertools import chain
 from pathlib import Path
@@ -24,6 +24,11 @@ class MultiLedgerLine(Protocol[Account, Currency]):
     date: pd.Timestamp
     debit: Sequence[tuple[Account, Decimal, Currency]]
     credit: Sequence[tuple[Account, Decimal, Currency]]
+
+
+class GeneralLedgerLine(Protocol[Account, Currency]):
+    date: pd.Timestamp
+    values: Sequence[tuple[Account, Decimal, Currency]]
 
 
 @attrs.frozen(kw_only=True)
@@ -54,6 +59,26 @@ class MultiLedgerLineImpl(MultiLedgerLine[Account, Currency]):
             .fillna("")
             .to_string(index=False, header=False)
         )
+
+
+@attrs.frozen(kw_only=True, auto_detect=True)
+class GeneralLedgerLineImpl(GeneralLedgerLine[Account, Currency]):
+    date: pd.Timestamp
+    values: Sequence[tuple[Account, Decimal, Currency]]
+
+
+def generalledger_line_to_multiledger_line(
+    line: GeneralLedgerLine[Account, Currency],
+    is_positive: Mapping[Account, bool],
+) -> MultiLedgerLine[Account, Currency]:
+    debit = []
+    credit = []
+    for account, amount, currency in line.values:
+        if is_positive[account]:
+            debit.append((account, amount, currency))
+        else:
+            credit.append((account, amount, currency))
+    return MultiLedgerLineImpl(date=line.date, debit=debit, credit=credit)
 
 
 def multiledger_line_to_ledger_line(
