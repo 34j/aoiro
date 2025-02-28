@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.0.3 (2025-02-28)
+
+### Bug fixes
+
+- Update dependency typer to v0.15.2 (#14) ([`396d477`](https://github.com/34j/aoiro/commit/396d4770b1a09b1629d777f043e03247c3074f25))
+
 ## v0.0.2 (2025-02-23)
 
 ### Bug fixes
