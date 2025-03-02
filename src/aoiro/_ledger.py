@@ -2,14 +2,15 @@ from collections.abc import Mapping, Sequence
 from decimal import Decimal
 from itertools import chain
 from pathlib import Path
-from typing import Literal, Protocol, TypeVar
+from typing import Protocol, TypeVar
 
 import attrs
 import pandas as pd
+from account_codes_jp import Account, AccountSundry
+from account_codes_jp._common import SUNDRY
 from dateparser import parse
 
-Currency = TypeVar("Currency")
-Account = TypeVar("Account")
+Currency = TypeVar("Currency", bound=str)
 
 
 class LedgerLine(Protocol[Account, Currency]):
@@ -39,6 +40,12 @@ class LedgerLineImpl(LedgerLine[Account, Currency]):
     debit_account: Account
     credit_account: Account
 
+    def __repr__(self) -> str:
+        return (
+            f"{self.date} {self.amount} {self.currency} "
+            f"{self.debit_account} / {self.credit_account}"
+        )
+
 
 @attrs.frozen(kw_only=True, auto_detect=True)
 class MultiLedgerLineImpl(MultiLedgerLine[Account, Currency]):
@@ -56,6 +63,7 @@ class MultiLedgerLineImpl(MultiLedgerLine[Account, Currency]):
         )
         return (
             pd.concat([date, debit, credit], axis=1)
+            .replace({pd.NaT: ""})
             .fillna("")
             .to_string(index=False, header=False)
         )
@@ -81,9 +89,18 @@ def generalledger_line_to_multiledger_line(
     return MultiLedgerLineImpl(date=line.date, debit=debit, credit=credit)
 
 
+def multiledger_line_to_generalledger_line(
+    line: MultiLedgerLine[Account, Currency],
+) -> GeneralLedgerLine[Account, Currency]:
+    return GeneralLedgerLineImpl(
+        date=line.date,
+        values=[*line.debit, *line.credit],
+    )
+
+
 def multiledger_line_to_ledger_line(
     line: MultiLedgerLine[Account, Currency],
-) -> Sequence[LedgerLine[Account | Literal["諸口"], Currency]]:
+) -> Sequence[LedgerLine[Account | AccountSundry, Currency]]:
     if len(line.debit) == len(line.credit) == 1:
         return [
             LedgerLineImpl(
@@ -100,7 +117,7 @@ def multiledger_line_to_ledger_line(
             amount=amount,
             currency=currency,
             debit_account=debit_account,
-            credit_account="諸口",
+            credit_account=SUNDRY,
         )
         for debit_account, amount, currency in line.debit
     ] + [
@@ -108,7 +125,7 @@ def multiledger_line_to_ledger_line(
             date=line.date,
             amount=amount,
             currency=currency,
-            debit_account="諸口",
+            debit_account=SUNDRY,
             credit_account=credit_account,
         )
         for credit_account, amount, currency in line.credit
@@ -117,7 +134,7 @@ def multiledger_line_to_ledger_line(
 
 def multiledger_to_ledger(
     lines: Sequence[MultiLedgerLine[Account, Currency]],
-) -> Sequence[LedgerLine[Account | Literal["諸口"], Currency]]:
+) -> Sequence[LedgerLine[Account | AccountSundry, Currency]]:
     return list(chain(*[multiledger_line_to_ledger_line(line) for line in lines]))
 
 
