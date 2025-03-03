@@ -1,3 +1,4 @@
+from datetime import datetime
 from pathlib import Path
 
 # from rich import print
@@ -22,7 +23,10 @@ app = typer.Typer(pretty_exceptions_enable=True)
 
 
 @app.command()
-def _main(path: Path) -> None:
+def _main(path: Path, year: int | None = None) -> None:
+    if year is None:
+        year = datetime.now().year - 1
+
     def patch_G(G: nx.DiGraph) -> nx.DiGraph:
         G.add_node(-2, label="為替差損益")
         G.add_edge(next(n for n, d in G.nodes(data=True) if d["label"] == "売上"), -2)
@@ -42,6 +46,7 @@ def _main(path: Path) -> None:
     ledger = multiledger_to_ledger(
         generalledger_to_multiledger(gledger, is_debit=is_debit)
     )
+    ledger = [line for line in ledger if line.date.year == year]
     with pd.option_context("display.max_rows", None, "display.max_columns", None):
         print(
             pd.DataFrame([attrs.asdict(line) for line in ledger])  # type: ignore

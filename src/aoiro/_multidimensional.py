@@ -60,6 +60,21 @@ def multidimensional_ledger_to_ledger(
     """
     Convert multidimensional ledger to ledger.
 
+    The multidimensional ledger's any account must have
+    positive amount. You may have 2 options:
+
+    1.  Use the entire ledger as the input.
+    2.  Add a general ledger line with only positive amounts,
+        which represents the B/S sheet of the previous period, like
+    >>> lines.append(
+    >>>    GeneralLedgerLineImpl(
+    >>>        date=datetime(2024, 1, 1),
+    >>>        values=[
+    >>>            ("現金", 1000, "JPY"),
+    >>>         ]
+    >>>     )
+    >>> )
+
     Returns
     -------
     GeneralLedgerLineImpl[Account | Literal["為替差損益"], Literal[""]]
