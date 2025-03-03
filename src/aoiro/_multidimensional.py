@@ -71,6 +71,8 @@ def multidimensional_ledger_to_ledger(
     >>>        date=datetime(2024, 1, 1),
     >>>        values=[
     >>>            ("現金", 1000, "JPY"),
+    >>>            # don't add something like ("現金繰入", 1000, "JPY")
+    >>>            # although this looks weird.
     >>>         ]
     >>>     )
     >>> )

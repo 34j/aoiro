@@ -23,7 +23,7 @@ app = typer.Typer(pretty_exceptions_enable=True)
 
 
 @app.command()
-def _main(path: Path, year: int | None = None) -> None:
+def _main(path: Path, year: int | None = None, drop: bool = True) -> None:
     if year is None:
         year = datetime.now().year - 1
 
@@ -46,14 +46,15 @@ def _main(path: Path, year: int | None = None) -> None:
     ledger = multiledger_to_ledger(
         generalledger_to_multiledger(gledger, is_debit=is_debit)
     )
-    ledger = [line for line in ledger if line.date.year == year]
+    ledger_now = [line for line in ledger if line.date.year == year]
     with pd.option_context("display.max_rows", None, "display.max_columns", None):
         print(
-            pd.DataFrame([attrs.asdict(line) for line in ledger])  # type: ignore
+            pd.DataFrame([attrs.asdict(line) for line in ledger_now])  # type: ignore
             .set_index("date")
             .sort_index(axis=0)
         )
-    G = get_sheets(gledger, G, drop=True)
+    gledger_now = [line for line in gledger if line.date.year == year]
+    G = get_sheets(gledger_now, G, drop=drop)
     for n, d in G.nodes(data=True):
         G.nodes[n]["label"] = f"{d['label']}/{d['sum'].get('', 0)}"
     for line in generate_network_text(G, with_labels=True):

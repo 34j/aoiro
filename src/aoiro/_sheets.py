@@ -1,4 +1,4 @@
-from collections.abc import Iterable, Sequence
+from collections.abc import Sequence
 from itertools import groupby
 from typing import Any
 
@@ -62,7 +62,9 @@ def get_sheets(
             continue
         successors = list(G.successors(n))
         if successors:
-            G.nodes[n]["sum"] = _dict_sum(G.nodes[child]["sum"] for child in successors)
+            G.nodes[n]["sum"] = _dict_sum(
+                [G.nodes[child]["sum"] for child in successors]
+            )
         else:
             if drop:
                 G.remove_node(n)
@@ -71,5 +73,8 @@ def get_sheets(
     return G
 
 
-def _dict_sum(d: Iterable[dict[Any, Any]]) -> dict[Any, Any]:
-    return {k: sum(getattr(d_child, k, 0) for d_child in d) for k in set().union(*d)}
+def _dict_sum(
+    ds: Sequence[dict[Any, Any]],
+    /,
+) -> dict[Any, Any]:
+    return {k: sum([d.get(k, 0) for d in ds]) for k in set().union(*ds)}
