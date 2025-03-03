@@ -1,5 +1,6 @@
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from itertools import groupby
+from typing import Any
 
 import networkx as nx
 
@@ -23,7 +24,6 @@ def get_sheets(
 
     """
     values = [value for line in lines for value in line.values]
-    print(values)
     grouped = {
         k: list(v)
         for k, v in groupby(
@@ -33,7 +33,6 @@ def get_sheets(
     grouped_nested = {
         k: dict(v) for k, v in groupby(grouped.items(), key=lambda x: x[0][0])
     }
-    print(grouped_nested, grouped)
 
     # Check that all accounts are in G
     all_accounts = set(grouped_nested.keys())
@@ -51,16 +50,21 @@ def get_sheets(
             else:
                 G_new.nodes[n]["sum"] = {}
             continue
-        print(d["label"])
-        print(grouped_nested[d["label"]])
         sum_ = {
             currency: sum(v for _, v, _ in values)
             for (_, currency), values in grouped_nested[d["label"]].items()
         }
-        print(sum_)
         G_new.nodes[n]["sum"] = sum_
     for n in reversed(list(nx.topological_sort(G_new))):
-        G_new.nodes[n]["sum"] = sum(
-            G_new.nodes[child]["sum"] for child in G_new.successors(n)
-        )
+        successors = list(G_new.successors(n))
+        if successors:
+            G_new.nodes[n]["sum"] = _dict_sum(
+                G_new.nodes[child]["sum"] for child in successors
+            )
+        elif "sum" not in G_new.nodes[n]:
+            G_new.nodes[n]["sum"] = {}
     return G_new
+
+
+def _dict_sum(d: Iterable[dict[Any, Any]]) -> dict[Any, Any]:
+    return {k: sum(getattr(d_child, k, 0) for d_child in d) for k in set().union(*d)}
