@@ -1,22 +1,27 @@
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
-from ._ledger import MultiLedgerLine, MultiLedgerLineImpl, read_all_dataframes
+from ._io import read_all_dataframes
+from ._ledger import (
+    GeneralLedgerLineImpl,
+)
 
 
 def ledger_from_expenses(
     path: Path,
-) -> Sequence[MultiLedgerLine[Any, Any]]:
+) -> Sequence[GeneralLedgerLineImpl[Literal["事業主貸", "売上"], Any]]:
     df = read_all_dataframes(path / "expenses")
     df["取引先"] = df["path"]
-    res = []
+    res: list[GeneralLedgerLineImpl[Literal["事業主貸", "売上"], Any]] = []
     for d, row in df.iterrows():
         res.append(
-            MultiLedgerLineImpl(
+            GeneralLedgerLineImpl(
                 date=d,
-                debit=[("事業主貸", row["金額"], row["通貨"])],
-                credit=[("売上", row["金額"], row["通貨"])],
+                values=[
+                    ("事業主貸", row["金額"], row["通貨"]),
+                    ("売上", row["金額"], row["通貨"]),
+                ],
             )
         )
     return res

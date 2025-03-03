@@ -7,7 +7,7 @@ from aoiro.cli import app
 runner = CliRunner()
 
 
-def test_help():
+def test_run():
     """The help message includes the CLI name."""
     result = runner.invoke(app, [(Path(__file__).parent / "test_dir").as_posix()])
     assert result.exit_code == 0

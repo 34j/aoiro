@@ -2,26 +2,19 @@ from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from decimal import Decimal
 from pathlib import Path
-from typing import Literal
+from typing import Callable, Literal
 
 import numpy as np
 import pandas as pd
 import requests
 
-from ._ledger import (
-    Account,
-    Currency,
-    MultiLedgerLine,
-    MultiLedgerLineImpl,
-)
+from ._ledger import Account, Currency, GeneralLedgerLine, GeneralLedgerLineImpl
 
 
 def get_currency(
-    lines: Sequence[MultiLedgerLine[Account, Currency]],
+    lines: Sequence[GeneralLedgerLine[Account, Currency]],
 ) -> Sequence[Currency]:
-    return np.unique(
-        [x[2] for line in lines for el in [line.debit, line.credit] for x in el]
-    )
+    return np.unique([x[2] for line in lines for x in line.values])  # type: ignore
 
 
 def get_prices(
@@ -44,9 +37,12 @@ def get_prices(
 
 
 def multidimensional_ledger_to_ledger(
-    lines: Sequence[MultiLedgerLine[Account, Currency]],
+    lines: Sequence[GeneralLedgerLine[Account, Currency]],
+    is_debit: Callable[[Account], bool],
     prices: Mapping[Currency, "pd.Series[Decimal]"] = {},
-) -> Sequence[MultiLedgerLine[Account | Literal["為替差損益"], Currency | Literal[""]]]:
+) -> Sequence[
+    GeneralLedgerLineImpl[Account | Literal["為替差損益"], Currency | Literal[""]]
+]:
     # get prices
     lines = sorted(lines, key=lambda x: x.date)
     currency = get_currency(lines)
@@ -54,74 +50,45 @@ def multidimensional_ledger_to_ledger(
     del prices
     prices_.update(get_prices(set(currency) - set(prices_.keys())))
 
-    debit_balance: dict[Account, dict[Currency, list[tuple[Decimal, Decimal]]]] = (
-        defaultdict(lambda: defaultdict(list))
+    balance: dict[Account, dict[Currency, list[tuple[Decimal, Decimal]]]] = defaultdict(
+        lambda: defaultdict(list)
     )
-    credit_balance: dict[Account, dict[Currency, list[tuple[Decimal, Decimal]]]] = (
-        defaultdict(lambda: defaultdict(list))
-    )
+    # Balance of (account, currency) represented by tuple (price, amount)
     lines_new = []
     for line in lines:
         profit = Decimal(0)
-        debit: list[
+        values: list[
             tuple[Account | Literal["為替差損益"], Decimal, Currency | Literal[""]]
         ] = []
-        for a, v, c in line.debit:
+        for a, v, c in line.values:
             if c == "":
-                debit.append((a, v, c))
+                values.append((a, v, c))
                 continue
             price_current = Decimal(str(prices_[c][line.date]))
             price_real = Decimal(0)
-            if a in credit_balance.keys():
+            if a in balance.keys():
                 while v > 0:
-                    vtemp = max(v, credit_balance[a][c][0][1])
-                    price_real += vtemp * credit_balance[a][c][0][0]
+                    vtemp = max(v, balance[a][c][0][1])
+                    price_real += vtemp * balance[a][c][0][0]
                     v -= vtemp
 
-                    # update credit balance
-                    credit_balance[a][c][0] = (
-                        credit_balance[a][c][0][0],
-                        credit_balance[a][c][0][1] - vtemp,
+                    # update balance
+                    balance[a][c][0] = (
+                        balance[a][c][0][0],
+                        balance[a][c][0][1] - vtemp,
                     )
-                    if credit_balance[a][c][0][1] == 0:
-                        credit_balance[a][c].pop(0)
+                    if balance[a][c][0][1] == 0:
+                        balance[a][c].pop(0)
             else:
-                debit_balance[a][c].append((price_current, v))
+                balance[a][c].append((price_current, v))
                 price_real = v * price_current
-            debit.append((a, price_real, ""))
-            profit -= price_real
-        credit: list[
-            tuple[Account | Literal["為替差損益"], Decimal, Currency | Literal[""]]
-        ] = []
-        for a, v, c in line.credit:
-            if c == "":
-                credit.append((a, v, c))
-                continue
-            price_current = Decimal(str(prices_[c][line.date]))
-            price_real = Decimal(0)
-            if a in debit_balance.keys():
-                while v > 0:
-                    vtemp = max(v, debit_balance[a][c][0][1])
-                    price_real += vtemp * debit_balance[a][c][0][0]
-                    v -= vtemp
+            values.append((a, price_real, ""))
+            if is_debit(a) is True:
+                profit += price_real
+            else:
+                profit -= price_real
 
-                    # update debit balance
-                    debit_balance[a][c][0] = (
-                        debit_balance[a][c][0][0],
-                        debit_balance[a][c][0][1] - vtemp,
-                    )
-                    if debit_balance[a][c][0][1] == 0:
-                        debit_balance[a][c].pop(0)
-            else:
-                credit_balance[a][c].append((price_current, v))
-                price_real = v * price_current
-            credit.append((a, price_real, ""))
-            profit += price_real
-        if profit > 0:
-            debit.append(("為替差損益", profit, ""))
-        elif profit < 0:
-            credit.append(("為替差損益", -profit, ""))
-        lines_new.append(
-            MultiLedgerLineImpl(date=line.date, debit=debit, credit=credit)
-        )
+        if profit != 0:
+            values.append(("為替差損益", profit, ""))
+        lines_new.append(GeneralLedgerLineImpl(date=line.date, values=values))
     return lines_new

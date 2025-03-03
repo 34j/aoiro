@@ -1,14 +1,12 @@
-from collections.abc import Mapping, Sequence
+from collections.abc import Sequence
 from decimal import Decimal
 from itertools import chain
-from pathlib import Path
-from typing import Protocol, TypeVar
+from typing import Callable, Protocol, TypeVar
 
 import attrs
 import pandas as pd
 from account_codes_jp import Account, AccountSundry
 from account_codes_jp._common import SUNDRY
-from dateparser import parse
 
 Currency = TypeVar("Currency", bound=str)
 
@@ -77,12 +75,12 @@ class GeneralLedgerLineImpl(GeneralLedgerLine[Account, Currency]):
 
 def generalledger_line_to_multiledger_line(
     line: GeneralLedgerLine[Account, Currency],
-    is_positive: Mapping[Account, bool],
+    is_debit: Callable[[Account], bool],
 ) -> MultiLedgerLine[Account, Currency]:
     debit = []
     credit = []
     for account, amount, currency in line.values:
-        if is_positive[account]:
+        if is_debit(account):
             debit.append((account, amount, currency))
         else:
             credit.append((account, amount, currency))
@@ -132,38 +130,14 @@ def multiledger_line_to_ledger_line(
     ]
 
 
+def generalledger_to_multiledger(
+    lines: Sequence[GeneralLedgerLine[Account, Currency]],
+    is_debit: Callable[[Account], bool],
+) -> Sequence[MultiLedgerLine[Account, Currency]]:
+    return [generalledger_line_to_multiledger_line(line, is_debit) for line in lines]
+
+
 def multiledger_to_ledger(
     lines: Sequence[MultiLedgerLine[Account, Currency]],
 ) -> Sequence[LedgerLine[Account | AccountSundry, Currency]]:
     return list(chain(*[multiledger_line_to_ledger_line(line) for line in lines]))
-
-
-def read_all_dataframes(path: Path) -> pd.DataFrame:
-    dfs = []
-    for p in path.rglob("*.csv"):
-        df = pd.read_csv(p)
-        df["path"] = p.relative_to(path).as_posix()
-        dfs.append(df)
-    df = pd.concat(dfs)
-    for k in df.columns:
-        if "日" not in k:
-            continue
-        df[k] = pd.to_datetime(
-            df[k].map(lambda s: parse(s, settings={"PREFER_DAY_OF_MONTH": "last"}))
-        )
-    df["通貨"] = (
-        df["金額"]
-        .astype(str)
-        .str.replace(r"[\d.]", "", regex=True)
-        .str.strip()
-        .str.replace("$", "USD", regex=False)
-        .astype(str)
-    )
-    df["金額"] = (
-        df["金額"]
-        .astype(str)
-        .str.replace(r"[^\d.]", "", regex=True)
-        .apply(lambda x: Decimal(str(x)))
-    )
-    df.set_index("発生日", inplace=True, drop=False)
-    return df
