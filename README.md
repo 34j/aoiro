@@ -40,6 +40,20 @@
 
 CSV-based 青色申告 CLI app
 
+## Motivation
+
+- While it is often explained that the general ledger enables one to understand the accounting status at any given point in the history, but in reality, the real quantity of foreign currency, securities, goods, and fixed assets cannot be understood by the general ledger alone.
+- This project aims to combine the "multidimensional" or "vectorized" accounting introduced by [Ellerman 1986](https://ellerman.org/Davids-Stuff/Maths/Omega-DEB.CV.pdf) and matrix accounting, and tries to create real-world blue-return accounting sheets by referring to [Ozawa 2023](https://waseda.repo.nii.ac.jp/record/77807/files/ShogakuKenkyukaKiyo_96_6.pdf).
+- In short, this system is composed of the following elements:
+  - `Date`: `Set`
+  - `Account`: `Set`
+  - `Currency`: `Set`
+  - `is_debit`: `Account -> bool`
+  - `is_static`: `Account -> bool`
+  - `LedgerLine`: `Set<(Date, Account, Currency, Real)>`
+  - `Ledger`: `Set<LedgerLine>`
+- `Ledger` should be enough to create B/S, P/L sheets.
+
 ## Installation
 
 Install this via pip (or your favourite package manager):
