@@ -20,6 +20,22 @@ def get_currency(
 def get_prices(
     currency: Iterable[Currency],
 ) -> Mapping[Currency, "pd.Series[Decimal]"]:
+    """
+    Get prices of the currency indexed by date (not datetime).
+
+    Interpolates missing dates by forward fill.
+
+    Parameters
+    ----------
+    currency : Iterable[Currency]
+        The currency to get prices.
+
+    Returns
+    -------
+    Mapping[Currency, pd.Series[Decimal]]
+        The prices, indexed by date.
+
+    """
     URL = "https://www.mizuhobank.co.jp/market/quote.csv"
     Path("~/.cache/aoiro").expanduser().mkdir(exist_ok=True)
     path = Path("~/.cache/aoiro/quote.csv").expanduser()
@@ -40,58 +56,86 @@ def multidimensional_ledger_to_ledger(
     lines: Sequence[GeneralLedgerLine[Account, Currency]],
     is_debit: Callable[[Account], bool],
     prices: Mapping[Currency, "pd.Series[Decimal]"] = {},
-) -> Sequence[
-    GeneralLedgerLineImpl[Account | Literal["為替差損益"], Currency | Literal[""]]
-]:
-    # get prices
+) -> Sequence[GeneralLedgerLineImpl[Account | Literal["為替差損益"], Literal[""]]]:
+    """
+    Convert multidimensional ledger to ledger.
+
+    Returns
+    -------
+    GeneralLedgerLineImpl[Account | Literal["為替差損益"], Literal[""]]
+        The ledger lines.
+
+    """
+    # get prices, use prices_
     lines = sorted(lines, key=lambda x: x.date)
-    currency = get_currency(lines)
     prices_ = dict(prices)
     del prices
-    prices_.update(get_prices(set(currency) - set(prices_.keys())))
+    prices_.update(get_prices(set(get_currency(lines)) - set(prices_.keys())))
 
+    # balance of (account, currency) represented by tuple (price, amount)
     balance: dict[Account, dict[Currency, list[tuple[Decimal, Decimal]]]] = defaultdict(
         lambda: defaultdict(list)
     )
-    # Balance of (account, currency) represented by tuple (price, amount)
+
+    # the new lines
     lines_new = []
     for line in lines:
+        # profit of the old line
         profit = Decimal(0)
-        values: list[
-            tuple[Account | Literal["為替差損益"], Decimal, Currency | Literal[""]]
-        ] = []
-        for a, v, c in line.values:
-            if c == "":
-                values.append((a, v, c))
-                continue
-            price_current = Decimal(str(prices_[c][line.date]))
-            price_real = Decimal(0)
-            if a in balance.keys():
-                while v > 0:
-                    vtemp = max(v, balance[a][c][0][1])
-                    price_real += vtemp * balance[a][c][0][0]
-                    v -= vtemp
 
-                    # update balance
-                    balance[a][c][0] = (
-                        balance[a][c][0][0],
-                        balance[a][c][0][1] - vtemp,
+        # the values of the new line
+        values: list[tuple[Account | Literal["為替差損益"], Decimal, Literal[""]]] = []
+
+        # iterate over the values of the old line
+        for account, amount, currency in line.values:
+            # skip if the currency is empty (default, exchange rate = 1)
+            if currency == "":
+                values.append((account, amount, currency))  # type: ignore
+                continue
+
+            # meaning of "quote": https://docs.ccxt.com/#/?id=market-structure
+            price_current = Decimal(str(prices_[currency][line.date]))
+            amount_in_quote = Decimal(0)
+            if amount < 0:
+                while amount < 0:
+                    # the maximum amount to subtract from the first element
+                    # of the balance[account][currency]
+                    amount_substract = max(-amount, balance[account][currency][0][1])
+                    amount_in_quote -= (
+                        amount_substract * balance[account][currency][0][0]
                     )
-                    if balance[a][c][0][1] == 0:
-                        balance[a][c].pop(0)
+                    amount += amount_substract
+
+                    # subtract the amount from the balance
+                    balance[account][currency][0] = (
+                        balance[account][currency][0][0],
+                        balance[account][currency][0][1] - amount_substract,
+                    )
+                    # remove if the amount is zero
+                    if balance[account][currency][0][1] == 0:
+                        balance[account][currency].pop(0)
             else:
-                balance[a][c].append((price_current, v))
-                price_real = v * price_current
+                balance[account][currency].append((price_current, amount))
+                amount_in_quote = amount * price_current
+
+            # round the amount_in_quote
             with localcontext() as ctx:
                 ctx.rounding = ROUND_DOWN
-                price_real = round(price_real, 0)
-            values.append((a, price_real, ""))
-            if is_debit(a) is True:
-                profit += price_real
-            else:
-                profit -= price_real
+                amount_in_quote = round(amount_in_quote, 0)
 
+            # append to the values of the new line
+            values.append((account, amount_in_quote, ""))
+
+            # add to the profit
+            if is_debit(account) is True:
+                profit += amount_in_quote
+            else:
+                profit -= amount_in_quote
+
+        # append only if profit is not zero
         if profit != 0:
             values.append(("為替差損益", profit, ""))
+
+        # append the new line
         lines_new.append(GeneralLedgerLineImpl(date=line.date, values=values))
     return lines_new
