@@ -93,7 +93,7 @@ def ledger_from_sales(
                 raise ValueError("通貨が異なる取引に源泉徴収が含まれています。")
             values = [("事業主貸", amount, c)]
         ledger_lines.append(
-            GeneralLedgerLineImpl(date=d, values=[*values, ("売掛金", amount, c)])
+            GeneralLedgerLineImpl(date=d, values=[*values, ("売掛金", -amount, c)])
         )
     if (df["発生日"] > df["振込日"]).any():
         raise ValueError("発生日が振込日より後の取引があります。")

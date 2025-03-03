@@ -1,13 +1,14 @@
 from collections.abc import Sequence
 from decimal import Decimal
 from itertools import chain
-from typing import Callable, Protocol, TypeVar
+from typing import Callable, Literal, Protocol, TypeVar
 
 import attrs
 import pandas as pd
-from account_codes_jp import Account, AccountSundry
 from account_codes_jp._common import SUNDRY
 
+AccountSundry = Literal["諸口"]
+Account = TypeVar("Account", bound=str)
 Currency = TypeVar("Currency", bound=str)
 
 
@@ -80,10 +81,10 @@ def generalledger_line_to_multiledger_line(
     debit = []
     credit = []
     for account, amount, currency in line.values:
-        if is_debit(account):
-            debit.append((account, amount, currency))
+        if is_debit(account) == (amount > 0):
+            debit.append((account, abs(amount), currency))
         else:
-            credit.append((account, amount, currency))
+            credit.append((account, abs(amount), currency))
     return MultiLedgerLineImpl(date=line.date, debit=debit, credit=credit)
 
 
@@ -109,7 +110,7 @@ def multiledger_line_to_ledger_line(
                 credit_account=line.credit[0][0],
             )
         ]
-    return [  # type: ignore
+    return [
         LedgerLineImpl(
             date=line.date,
             amount=amount,

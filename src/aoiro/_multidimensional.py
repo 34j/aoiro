@@ -1,6 +1,6 @@
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
-from decimal import Decimal
+from decimal import ROUND_DOWN, Decimal, localcontext
 from pathlib import Path
 from typing import Callable, Literal
 
@@ -14,7 +14,7 @@ from ._ledger import Account, Currency, GeneralLedgerLine, GeneralLedgerLineImpl
 def get_currency(
     lines: Sequence[GeneralLedgerLine[Account, Currency]],
 ) -> Sequence[Currency]:
-    return np.unique([x[2] for line in lines for x in line.values])  # type: ignore
+    return np.unique([x[2] for line in lines for x in line.values])
 
 
 def get_prices(
@@ -82,6 +82,9 @@ def multidimensional_ledger_to_ledger(
             else:
                 balance[a][c].append((price_current, v))
                 price_real = v * price_current
+            with localcontext() as ctx:
+                ctx.rounding = ROUND_DOWN
+                price_real = round(price_real, 0)
             values.append((a, price_real, ""))
             if is_debit(a) is True:
                 profit += price_real
