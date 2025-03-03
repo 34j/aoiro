@@ -49,7 +49,6 @@ def _main(path: Path) -> None:
             .sort_index(axis=0)
         )
     G = get_sheets(gledger, G, drop=True)
-    print(nx.get_node_attributes(G, "sum"))
     for n, d in G.nodes(data=True):
         G.nodes[n]["label"] = f"{d['label']}/{d['sum'].get('', 0)}"
     for line in generate_network_text(G, with_labels=True):

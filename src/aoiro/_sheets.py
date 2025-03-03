@@ -40,30 +40,35 @@ def get_sheets(
     if all_accounts - all_accounts_G:
         raise ValueError(f"{all_accounts - all_accounts_G} not in G")
 
-    G_new = G.copy()
-    for n, d in G.nodes(data=True):
+    # non-abstract accounts
+    for n, d in G.copy().nodes(data=True):
         if d["abstract"]:
             continue
         if d["label"] not in all_accounts:
             if drop:
-                G_new.remove_node(n)
+                G.remove_node(n)
             else:
-                G_new.nodes[n]["sum"] = {}
+                G.nodes[n]["sum"] = {}
             continue
         sum_ = {
             currency: sum(v for _, v, _ in values)
             for (_, currency), values in grouped_nested[d["label"]].items()
         }
-        G_new.nodes[n]["sum"] = sum_
-    for n in reversed(list(nx.topological_sort(G_new))):
-        successors = list(G_new.successors(n))
+        G.nodes[n]["sum"] = sum_
+
+    # sum up children
+    for n in reversed(list(nx.topological_sort(G))):
+        if not G.nodes[n]["abstract"]:
+            continue
+        successors = list(G.successors(n))
         if successors:
-            G_new.nodes[n]["sum"] = _dict_sum(
-                G_new.nodes[child]["sum"] for child in successors
-            )
-        elif "sum" not in G_new.nodes[n]:
-            G_new.nodes[n]["sum"] = {}
-    return G_new
+            G.nodes[n]["sum"] = _dict_sum(G.nodes[child]["sum"] for child in successors)
+        else:
+            if drop:
+                G.remove_node(n)
+            else:
+                G.nodes[n]["sum"] = {}
+    return G
 
 
 def _dict_sum(d: Iterable[dict[Any, Any]]) -> dict[Any, Any]:
