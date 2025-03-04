@@ -53,6 +53,7 @@ def get_sheets(
             continue
         sum_ = {
             currency: sum(el.amount for el in values)
+            * (1 if d["account_type"].debit else -1)
             for (_, currency), values in grouped_nested[d["label"]].items()
         }
         G.nodes[n]["sum"] = sum_
