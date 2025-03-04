@@ -63,7 +63,9 @@ def multidimensional_ledger_to_ledger(
     lines: Sequence[GeneralLedgerLine[Account, Currency]],
     is_debit: Callable[[Account], bool],
     prices: Mapping[Currency, "pd.Series[Decimal]"] = {},
-) -> Sequence[GeneralLedgerLineImpl[Account | Literal["為替差損益"], Literal[""]]]:
+) -> Sequence[
+    GeneralLedgerLineImpl[Account | Literal["為替差益", "為替差損"], Literal[""]]
+]:
     """
     Convert multidimensional ledger to ledger.
 
@@ -86,7 +88,7 @@ def multidimensional_ledger_to_ledger(
 
     Returns
     -------
-    GeneralLedgerLineImpl[Account | Literal["為替差損益"], Literal[""]]
+    GeneralLedgerLineImpl[Account | Literal["為替差益", "為替差損"], Literal[""]]
         The ledger lines.
 
     """
@@ -108,7 +110,9 @@ def multidimensional_ledger_to_ledger(
         profit = Decimal(0)
 
         # the values of the new line
-        values: list[LedgerElement[Account | Literal["為替差損益"], Literal[""]]] = []
+        values: list[
+            LedgerElement[Account | Literal["為替差益", "為替差損"], Literal[""]]
+        ] = []
 
         # iterate over the values of the old line
         for el in line.values:
@@ -166,7 +170,11 @@ def multidimensional_ledger_to_ledger(
         # append only if profit is not zero
         if profit != 0:
             values.append(
-                LedgerElementImpl(account="為替差損益", amount=profit, currency="")
+                LedgerElementImpl(
+                    account="為替差益" if profit > 0 else "為替差損",
+                    amount=abs(profit),
+                    currency="",
+                )
             )
 
         # append the new line

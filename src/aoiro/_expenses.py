@@ -18,7 +18,7 @@ def ledger_from_expenses(
                 date=date,
                 values=[
                     LedgerElementImpl(
-                        account="事業主貸", amount=row["金額"], currency=row["通貨"]
+                        account="事業主借", amount=row["金額"], currency=row["通貨"]
                     ),
                     LedgerElementImpl(
                         account=row["勘定科目"],

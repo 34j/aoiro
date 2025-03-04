@@ -28,8 +28,12 @@ def _main(path: Path, year: int | None = None, drop: bool = True) -> None:
         year = datetime.now().year - 1
 
     def patch_G(G: nx.DiGraph) -> nx.DiGraph:
-        G.add_node(-2, label="為替差損益")
-        G.add_edge(next(n for n, d in G.nodes(data=True) if d["label"] == "売上"), -2)
+        G.add_node(-1, label="為替差益")
+        G.add_node(-2, label="為替差損")
+        G.add_edge(next(n for n, d in G.nodes(data=True) if d["label"] == "売上"), -1)
+        G.add_edge(
+            next(n for n, d in G.nodes(data=True) if d["label"] == "経費追加"), -2
+        )
         return G
 
     G = get_blue_return_accounts(patch_G)
