@@ -20,15 +20,21 @@ class LedgerLine(Protocol[Account, Currency]):
     credit_account: Account
 
 
+class LedgerElement(Protocol[Account, Currency]):
+    account: Account
+    amount: Decimal
+    currency: Currency
+
+
 class MultiLedgerLine(Protocol[Account, Currency]):
     date: pd.Timestamp
-    debit: Sequence[tuple[Account, Decimal, Currency]]
-    credit: Sequence[tuple[Account, Decimal, Currency]]
+    debit: Sequence[LedgerElement[Account, Currency]]
+    credit: Sequence[LedgerElement[Account, Currency]]
 
 
 class GeneralLedgerLine(Protocol[Account, Currency]):
     date: pd.Timestamp
-    values: Sequence[tuple[Account, Decimal, Currency]]
+    values: Sequence[LedgerElement[Account, Currency]]
 
 
 @attrs.frozen(kw_only=True)
@@ -46,11 +52,21 @@ class LedgerLineImpl(LedgerLine[Account, Currency]):
         )
 
 
+@attrs.frozen(kw_only=True)
+class LedgerElementImpl(LedgerElement[Account, Currency]):
+    account: Account
+    amount: Decimal
+    currency: Currency
+
+    def __repr__(self) -> str:
+        return f"{self.account} {self.amount} {self.currency}"
+
+
 @attrs.frozen(kw_only=True, auto_detect=True)
 class MultiLedgerLineImpl(MultiLedgerLine[Account, Currency]):
     date: pd.Timestamp
-    debit: Sequence[tuple[Account, Decimal, Currency]]
-    credit: Sequence[tuple[Account, Decimal, Currency]]
+    debit: Sequence[LedgerElement[Account, Currency]]
+    credit: Sequence[LedgerElement[Account, Currency]]
 
     def __repr__(self) -> str:
         date = pd.Series([self.date], name="date")
@@ -71,7 +87,7 @@ class MultiLedgerLineImpl(MultiLedgerLine[Account, Currency]):
 @attrs.frozen(kw_only=True, auto_detect=True)
 class GeneralLedgerLineImpl(GeneralLedgerLine[Account, Currency]):
     date: pd.Timestamp
-    values: Sequence[tuple[Account, Decimal, Currency]]
+    values: Sequence[LedgerElement[Account, Currency]]
 
 
 def generalledger_line_to_multiledger_line(
@@ -80,11 +96,19 @@ def generalledger_line_to_multiledger_line(
 ) -> MultiLedgerLine[Account, Currency]:
     debit = []
     credit = []
-    for account, amount, currency in line.values:
-        if is_debit(account) == (amount > 0):
-            debit.append((account, abs(amount), currency))
+    for el in line.values:
+        if is_debit(el.account) == (el.amount > 0):
+            debit.append(
+                LedgerElementImpl(
+                    account=el.account, amount=abs(el.amount), currency=el.currency
+                )
+            )
         else:
-            credit.append((account, abs(amount), currency))
+            credit.append(
+                LedgerElementImpl(
+                    account=el.account, amount=abs(el.amount), currency=el.currency
+                )
+            )
     return MultiLedgerLineImpl(date=line.date, debit=debit, credit=credit)
 
 
@@ -100,34 +124,38 @@ def multiledger_line_to_generalledger_line(
 def multiledger_line_to_ledger_line(
     line: MultiLedgerLine[Account, Currency],
 ) -> Sequence[LedgerLine[Account | AccountSundry, Currency]]:
-    if len(line.debit) == len(line.credit) == 1:
+    if (
+        len(line.debit) == len(line.credit) == 1
+        and line.debit[0].amount == line.credit[0].amount
+        and line.debit[0].currency == line.credit[0].currency
+    ):
         return [
             LedgerLineImpl(
                 date=line.date,
-                amount=line.debit[0][1],
-                currency=line.debit[0][2],
-                debit_account=line.debit[0][0],
-                credit_account=line.credit[0][0],
+                amount=line.debit[0].amount,
+                currency=line.debit[0].currency,
+                debit_account=line.debit[0].account,
+                credit_account=line.credit[0].account,
             )
         ]
     return [
         LedgerLineImpl(
             date=line.date,
-            amount=amount,
-            currency=currency,
-            debit_account=debit_account,
+            amount=el.amount,
+            currency=el.currency,
+            debit_account=el.account,
             credit_account=SUNDRY,
         )
-        for debit_account, amount, currency in line.debit
+        for el in line.debit
     ] + [
         LedgerLineImpl(
             date=line.date,
-            amount=amount,
-            currency=currency,
+            amount=el.amount,
+            currency=el.currency,
             debit_account=SUNDRY,
-            credit_account=credit_account,
+            credit_account=el.account,
         )
-        for credit_account, amount, currency in line.credit
+        for el in line.credit
     ]
 
 

@@ -8,13 +8,20 @@ import numpy as np
 import pandas as pd
 import requests
 
-from ._ledger import Account, Currency, GeneralLedgerLine, GeneralLedgerLineImpl
+from ._ledger import (
+    Account,
+    Currency,
+    GeneralLedgerLine,
+    GeneralLedgerLineImpl,
+    LedgerElement,
+    LedgerElementImpl,
+)
 
 
 def get_currency(
     lines: Sequence[GeneralLedgerLine[Account, Currency]],
 ) -> Sequence[Currency]:
-    return np.unique([x[2] for line in lines for x in line.values])
+    return np.unique([x.currency for line in lines for x in line.values])
 
 
 def get_prices(
@@ -101,39 +108,42 @@ def multidimensional_ledger_to_ledger(
         profit = Decimal(0)
 
         # the values of the new line
-        values: list[tuple[Account | Literal["為替差損益"], Decimal, Literal[""]]] = []
+        values: list[LedgerElement[Account | Literal["為替差損益"], Literal[""]]] = []
 
         # iterate over the values of the old line
-        for account, amount, currency in line.values:
+        for el in line.values:
+            amount_left = el.amount
             # skip if the currency is empty (default, exchange rate = 1)
-            if currency == "":
-                values.append((account, amount, currency))  # type: ignore
+            if el.currency == "":
+                values.append(el)  # type: ignore
                 continue
 
             # meaning of "quote": https://docs.ccxt.com/#/?id=market-structure
-            price_current = Decimal(str(prices_[currency][line.date]))
+            price_current = Decimal(str(prices_[el.currency][line.date]))
             amount_in_quote = Decimal(0)
-            if amount < 0:
-                while amount < 0:
+            if amount_left < 0:
+                while amount_left < 0:
                     # the maximum amount to subtract from the first element
                     # of the balance[account][currency]
-                    amount_substract = max(-amount, balance[account][currency][0][1])
-                    amount_in_quote -= (
-                        amount_substract * balance[account][currency][0][0]
+                    amount_substract = max(
+                        -amount_left, balance[el.account][el.currency][0][1]
                     )
-                    amount += amount_substract
+                    amount_in_quote -= (
+                        amount_substract * balance[el.account][el.currency][0][0]
+                    )
+                    amount_left += amount_substract
 
                     # subtract the amount from the balance
-                    balance[account][currency][0] = (
-                        balance[account][currency][0][0],
-                        balance[account][currency][0][1] - amount_substract,
+                    balance[el.account][el.currency][0] = (
+                        balance[el.account][el.currency][0][0],
+                        balance[el.account][el.currency][0][1] - amount_substract,
                     )
                     # remove if the amount is zero
-                    if balance[account][currency][0][1] == 0:
-                        balance[account][currency].pop(0)
+                    if balance[el.account][el.currency][0][1] == 0:
+                        balance[el.account][el.currency].pop(0)
             else:
-                balance[account][currency].append((price_current, amount))
-                amount_in_quote = amount * price_current
+                balance[el.account][el.currency].append((price_current, amount_left))
+                amount_in_quote = amount_left * price_current
 
             # round the amount_in_quote
             with localcontext() as ctx:
@@ -141,17 +151,23 @@ def multidimensional_ledger_to_ledger(
                 amount_in_quote = round(amount_in_quote, 0)
 
             # append to the values of the new line
-            values.append((account, amount_in_quote, ""))
+            values.append(
+                LedgerElementImpl(
+                    account=el.account, amount=amount_in_quote, currency=""
+                )
+            )
 
             # add to the profit
-            if is_debit(account) is True:
+            if is_debit(el.account) is True:
                 profit += amount_in_quote
             else:
                 profit -= amount_in_quote
 
         # append only if profit is not zero
         if profit != 0:
-            values.append(("為替差損益", profit, ""))
+            values.append(
+                LedgerElementImpl(account="為替差損益", amount=profit, currency="")
+            )
 
         # append the new line
         lines_new.append(GeneralLedgerLineImpl(date=line.date, values=values))

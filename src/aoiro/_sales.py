@@ -7,9 +7,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from ._io import read_all_dataframes
-from ._ledger import (
-    GeneralLedgerLineImpl,
-)
+from ._ledger import GeneralLedgerLineImpl, LedgerElementImpl
 
 
 def withholding_tax(amount: NDArray[Any]) -> NDArray[Any]:
@@ -69,31 +67,53 @@ def ledger_from_sales(
     df.fillna({"源泉徴収": 0, "手数料": 0}, inplace=True)
 
     ledger_lines: list[GeneralLedgerLineImpl[Any, Any]] = []
-    for d, row in df.iterrows():
+    for date, row in df.iterrows():
         ledger_lines.append(
             GeneralLedgerLineImpl(
-                date=d,
+                date=date,
                 values=[
-                    ("売掛金", row["金額"], row["通貨"]),
-                    ("売上", row["金額"], row["通貨"]),
+                    LedgerElementImpl(
+                        account="売掛金", amount=row["金額"], currency=row["通貨"]
+                    ),
+                    LedgerElementImpl(
+                        account="売上", amount=row["金額"], currency=row["通貨"]
+                    ),
                 ],
             )
         )
-    for (_, d, c), df_ in df.groupby(["取引先", "振込日", "通貨"]):
-        amount = df_["金額"].sum()
-        if c == "":
-            withholding = withholding_tax(
-                df_.loc[df_["源泉徴収"] == True, "金額"].sum()
+    for (_, date, currency), df_ in df.groupby(["取引先", "振込日", "通貨"]):
+        amount = Decimal(df_["金額"].sum())
+        if currency == "":
+            withholding = Decimal(
+                withholding_tax(df_.loc[df_["源泉徴収"] == True, "金額"].sum()).item()
             )
-            values = [("事業主貸", amount - withholding, c)]
+            values = [
+                LedgerElementImpl(
+                    account="事業主貸", amount=amount - withholding, currency=currency
+                )
+            ]
             if withholding > 0:
-                values.append(("仮払税金", withholding, c))
+                values.append(
+                    LedgerElementImpl(
+                        account="仮払税金", amount=withholding, currency=currency
+                    )
+                )
         else:
             if (df_["源泉徴収"] == True).any():
                 raise ValueError("通貨が異なる取引に源泉徴収が含まれています。")
-            values = [("事業主貸", amount, c)]
+            values = [
+                LedgerElementImpl(account="事業主貸", amount=amount, currency=currency)
+            ]
         ledger_lines.append(
-            GeneralLedgerLineImpl(date=d, values=[*values, ("売掛金", -amount, c)])
+            GeneralLedgerLineImpl(
+                date=date,
+                values=[
+                    *values,
+                    LedgerElementImpl(
+                        account="売掛金", amount=-amount, currency=currency
+                    ),
+                ],
+            )
         )
     if (df["発生日"] > df["振込日"]).any():
         raise ValueError("発生日が振込日より後の取引があります。")

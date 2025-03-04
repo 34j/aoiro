@@ -1,26 +1,30 @@
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any
 
 from ._io import read_all_dataframes
-from ._ledger import (
-    GeneralLedgerLineImpl,
-)
+from ._ledger import GeneralLedgerLineImpl, LedgerElementImpl
 
 
 def ledger_from_expenses(
     path: Path,
-) -> Sequence[GeneralLedgerLineImpl[Literal["事業主貸", "売上"], Any]]:
+) -> Sequence[GeneralLedgerLineImpl[Any, Any]]:
     df = read_all_dataframes(path / "expenses")
     df["取引先"] = df["path"]
-    res: list[GeneralLedgerLineImpl[Literal["事業主貸", "売上"], Any]] = []
-    for d, row in df.iterrows():
+    res: list[GeneralLedgerLineImpl[Any, Any]] = []
+    for date, row in df.iterrows():
         res.append(
             GeneralLedgerLineImpl(
-                date=d,
+                date=date,
                 values=[
-                    ("事業主貸", row["金額"], row["通貨"]),
-                    ("売上", row["金額"], row["通貨"]),
+                    LedgerElementImpl(
+                        account="事業主貸", amount=row["金額"], currency=row["通貨"]
+                    ),
+                    LedgerElementImpl(
+                        account=row["勘定科目"],
+                        amount=row["金額"],
+                        currency=row["通貨"],
+                    ),
                 ],
             )
         )

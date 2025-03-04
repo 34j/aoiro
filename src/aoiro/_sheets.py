@@ -27,7 +27,8 @@ def get_sheets(
     grouped = {
         k: list(v)
         for k, v in groupby(
-            sorted(values, key=lambda x: (x[0], x[2])), key=lambda x: (x[0], x[2])
+            sorted(values, key=lambda x: (x.account, x.currency)),
+            key=lambda x: (x.account, x.currency),
         )
     }
     grouped_nested = {
@@ -51,7 +52,7 @@ def get_sheets(
                 G.nodes[n]["sum"] = {}
             continue
         sum_ = {
-            currency: sum(v for _, v, _ in values)
+            currency: sum(el.amount for el in values)
             for (_, currency), values in grouped_nested[d["label"]].items()
         }
         G.nodes[n]["sum"] = sum_
