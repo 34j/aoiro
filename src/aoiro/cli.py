@@ -58,6 +58,7 @@ def _main(path: Path, year: int | None = None, drop: bool = True) -> None:
             .sort_index(axis=0)
         )
     gledger_now = [line for line in gledger if line.date.year == year]
+    print(gledger_now)
     G = get_sheets(gledger_now, G, drop=drop)
     for n, d in G.nodes(data=True):
         G.nodes[n]["label"] = f"{d['label']}/{d['sum'].get('', 0)}"

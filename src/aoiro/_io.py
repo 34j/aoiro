@@ -11,6 +11,8 @@ def read_all_dataframes(path: Path) -> pd.DataFrame:
         df = pd.read_csv(p)
         df["path"] = p.relative_to(path).as_posix()
         dfs.append(df)
+    if not dfs:
+        return pd.DataFrame()
     df = pd.concat(dfs)
     for k in df.columns:
         if "日" not in k:

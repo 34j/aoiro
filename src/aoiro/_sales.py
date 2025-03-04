@@ -63,6 +63,8 @@ def ledger_from_sales(
 
     """
     df = read_all_dataframes(path / "sales")
+    if df.empty:
+        return []
     df["取引先"] = df["path"]
     df.fillna({"源泉徴収": 0, "手数料": 0}, inplace=True)
 

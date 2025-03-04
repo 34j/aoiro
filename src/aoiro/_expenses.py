@@ -10,6 +10,8 @@ def ledger_from_expenses(
     path: Path,
 ) -> Sequence[GeneralLedgerLineImpl[Any, Any]]:
     df = read_all_dataframes(path / "expenses")
+    if df.empty:
+        return []
     df["取引先"] = df["path"]
     res: list[GeneralLedgerLineImpl[Any, Any]] = []
     for date, row in df.iterrows():
