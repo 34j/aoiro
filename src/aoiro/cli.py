@@ -37,6 +37,8 @@ def _main(path: Path, year: int | None = None, drop: bool = True) -> None:
         return G
 
     G = get_blue_return_accounts(patch_G)
+
+    gledger_vec = list(ledger_from_sales(path, G)) + list(ledger_from_expenses(path))
     f = get_account_type_factory(G)
 
     def is_debit(x: str) -> bool:
@@ -45,7 +47,6 @@ def _main(path: Path, year: int | None = None, drop: bool = True) -> None:
             raise ValueError(f"Account {x} not recognized")
         return v
 
-    gledger_vec = list(ledger_from_sales(path)) + list(ledger_from_expenses(path))
     gledger = multidimensional_ledger_to_ledger(gledger_vec, is_debit=is_debit)
     ledger = multiledger_to_ledger(
         generalledger_to_multiledger(gledger, is_debit=is_debit)
@@ -58,8 +59,7 @@ def _main(path: Path, year: int | None = None, drop: bool = True) -> None:
             .sort_index(axis=0)
         )
     gledger_now = [line for line in gledger if line.date.year == year]
-    print(gledger_now)
-    G = get_sheets(gledger_now, G, drop=drop)
+    get_sheets(gledger_now, G, drop=drop)
     for n, d in G.nodes(data=True):
         G.nodes[n]["label"] = f"{d['label']}/{d['sum'].get('', 0)}"
     for line in generate_network_text(G, with_labels=True):

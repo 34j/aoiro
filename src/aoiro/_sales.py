@@ -3,6 +3,7 @@ from decimal import ROUND_DOWN, Decimal, localcontext
 from pathlib import Path
 from typing import Any
 
+import networkx as nx
 import numpy as np
 from numpy.typing import NDArray
 
@@ -40,6 +41,7 @@ def withholding_tax(amount: NDArray[Any]) -> NDArray[Any]:
 
 def ledger_from_sales(
     path: Path,
+    G: nx.DiGraph | None = None,
 ) -> Sequence[GeneralLedgerLineImpl[Any, Any]]:
     """
     Generate ledger from CSV files in the path.
@@ -48,6 +50,8 @@ def ledger_from_sales(
     ----------
     path : Path
         The path to the directory containing CSV files.
+    G : nx.DiGraph | None
+        The graph of accounts, by default None.
 
     Returns
     -------
@@ -65,8 +69,21 @@ def ledger_from_sales(
     df = read_all_dataframes(path / "sales")
     if df.empty:
         return []
-    df["取引先"] = df["path"]
+    df["取引先"] = df["path"].str.replace(".csv", "")
     df.fillna({"源泉徴収": 0, "手数料": 0}, inplace=True)
+
+    if G is not None:
+        sales_node = next(
+            n
+            for n, d in G.nodes(data=True)
+            if d["label"] == "売上" and not d["abstract"]
+        )
+        sales_node_attrs = G.nodes[sales_node]
+        for t in df["取引先"].unique():
+            t_attrs = {**sales_node_attrs, "label": f"売上({t})"}
+            t_id = "sales_" + t
+            G.add_node(t_id, **t_attrs)
+            G.add_edge(sales_node, t_id)
 
     ledger_lines: list[GeneralLedgerLineImpl[Any, Any]] = []
     for date, row in df.iterrows():
@@ -78,7 +95,9 @@ def ledger_from_sales(
                         account="売掛金", amount=row["金額"], currency=row["通貨"]
                     ),
                     LedgerElementImpl(
-                        account="売上", amount=row["金額"], currency=row["通貨"]
+                        account="売上" if G is None else f"売上({row['取引先']})",
+                        amount=row["金額"],
+                        currency=row["通貨"],
                     ),
                 ],
             )
