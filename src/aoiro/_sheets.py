@@ -42,10 +42,13 @@ def get_sheets(
         raise ValueError(f"{all_accounts - all_accounts_G} not in G")
 
     # non-abstract accounts
+    met_accounts: set[Any] = set()
     for n in reversed(list(nx.topological_sort(G))):
         d = G.nodes[n]
         successors = list(G.successors(n))
-        add_current = (not d["abstract"]) and d["label"] in all_accounts
+        add_current = (not d["abstract"]) and d["label"] in (
+            all_accounts - met_accounts
+        )
         if successors or add_current:
             G.nodes[n]["sum"] = _dict_sum(
                 [G.nodes[child]["sum"] for child in successors]
@@ -63,6 +66,8 @@ def get_sheets(
                     else []
                 )
             )
+            if add_current:
+                met_accounts.add(d["label"])
         else:
             if drop:
                 G.remove_node(n)
