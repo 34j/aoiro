@@ -42,6 +42,7 @@ def get_sheets(
         raise ValueError(f"{all_accounts - all_accounts_G} not in G")
 
     # non-abstract accounts
+    G = G.copy()
     met_accounts: set[Any] = set()
     for n in reversed(list(nx.topological_sort(G))):
         d = G.nodes[n]
