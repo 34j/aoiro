@@ -73,17 +73,18 @@ def ledger_from_sales(
     df.fillna({"源泉徴収": 0, "手数料": 0}, inplace=True)
 
     if G is not None:
-        sales_node = next(
-            n
-            for n, d in G.nodes(data=True)
-            if d["label"] == "売上" and not d["abstract"]
-        )
-        sales_node_attrs = G.nodes[sales_node]
-        for t in df["取引先"].unique():
-            t_attrs = {**sales_node_attrs, "label": f"売上({t})"}
-            t_id = "sales_" + t
-            G.add_node(t_id, **t_attrs)
-            G.add_edge(sales_node, t_id)
+        for ca in ["売上", "仮払税金"]:
+            parent_node = next(
+                n
+                for n, d in G.nodes(data=True)
+                if d["label"] == ca and not d["abstract"]
+            )
+            parent_node_attrs = G.nodes[parent_node]
+            for t in df["取引先"].unique():
+                t_attrs = {**parent_node_attrs, "label": f"{ca}({t})"}
+                t_id = f"{ca}({t})"
+                G.add_node(t_id, **t_attrs)
+                G.add_edge(parent_node, t_id)
 
     ledger_lines: list[GeneralLedgerLineImpl[Any, Any]] = []
     for date, row in df.iterrows():
@@ -102,7 +103,7 @@ def ledger_from_sales(
                 ],
             )
         )
-    for (_, date, currency), df_ in df.groupby(["取引先", "振込日", "通貨"]):
+    for (t, date, currency), df_ in df.groupby(["取引先", "振込日", "通貨"]):
         amount = Decimal(df_["金額"].sum())
         if currency == "":
             withholding = Decimal(
@@ -116,7 +117,7 @@ def ledger_from_sales(
             if withholding > 0:
                 values.append(
                     LedgerElementImpl(
-                        account="仮払税金", amount=withholding, currency=currency
+                        account=f"仮払税金({t})", amount=withholding, currency=currency
                     )
                 )
         else:
