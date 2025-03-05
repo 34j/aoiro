@@ -4,25 +4,23 @@ from pathlib import Path
 from typing import Any
 
 import networkx as nx
-import numpy as np
-from numpy.typing import NDArray
 
 from ._io import read_all_dataframes
 from ._ledger import GeneralLedgerLineImpl, LedgerElementImpl
 
 
-def withholding_tax(amount: NDArray[Any]) -> NDArray[Any]:
+def withholding_tax(amount: Decimal) -> Decimal:
     """
     Withholding tax calculation for most 源泉徴収が必要な報酬・料金等.
 
     Parameters
     ----------
-    amount : NDArray[Any]
+    amount : Decimal
         The raw amount.
 
     Returns
     -------
-    NDArray[Any]
+    Decimal
         The withholding tax amount.
 
     References
@@ -32,11 +30,15 @@ def withholding_tax(amount: NDArray[Any]) -> NDArray[Any]:
     """
     with localcontext() as ctx:
         ctx.rounding = ROUND_DOWN
-        return np.where(
-            amount > 1000000,
-            round(1000000 * Decimal("0.1021") + (amount - 1000000) * Decimal("0.2042")),
-            round(amount * Decimal("0.1021")),
-        )
+        if amount > 1000000:
+            return round(
+                Decimal(
+                    1000000 * Decimal("0.1021") + (amount - 1000000) * Decimal("0.2042")
+                ),
+                0,
+            )
+        else:
+            return round(amount * Decimal("0.1021"), 0)
 
 
 def ledger_from_sales(
@@ -107,7 +109,7 @@ def ledger_from_sales(
         amount = Decimal(df_["金額"].sum())
         if currency == "":
             withholding = Decimal(
-                withholding_tax(df_.loc[df_["源泉徴収"] == True, "金額"].sum()).item()
+                withholding_tax(df_.loc[df_["源泉徴収"] == True, "金額"].sum())
             )
             values = [
                 LedgerElementImpl(
