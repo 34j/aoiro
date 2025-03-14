@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Any
 
 from .._ledger import GeneralLedgerLineImpl, LedgerElementImpl
-from ._io import read_csvs
+from ._io import read_simple_csvs
 
 
 def ledger_from_expenses(
@@ -27,7 +27,7 @@ def ledger_from_expenses(
         The ledger lines.
 
     """
-    df = read_csvs(path / "expenses")
+    df = read_simple_csvs(path / "expenses")
     if df.empty:
         return []
     df["取引先"] = df["path"]

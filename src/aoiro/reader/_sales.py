@@ -6,7 +6,7 @@ from typing import Any
 import networkx as nx
 
 from .._ledger import GeneralLedgerLineImpl, LedgerElementImpl
-from ._io import read_csvs
+from ._io import read_simple_csvs
 
 
 def withholding_tax(amount: Decimal) -> Decimal:
@@ -76,7 +76,7 @@ def ledger_from_sales(
         If withholding tax is included in transactions with different currencies.
 
     """
-    df = read_csvs(path / "sales")
+    df = read_simple_csvs(path / "sales")
     if df.empty:
         return []
     df["取引先"] = df["path"].str.replace(".csv", "")
@@ -116,8 +116,8 @@ def ledger_from_sales(
     for (t, date, currency), df_ in df.groupby(["取引先", "振込日", "通貨"]):
         amount = Decimal(df_["金額"].sum())
         if currency == "":
-            withholding = Decimal(
-                withholding_tax(df_.loc[df_["源泉徴収"] == True, "金額"].sum())
+            withholding = withholding_tax(
+                df_.loc[df_["源泉徴収"] == True, "金額"].sum()
             )
             values = [
                 LedgerElementImpl(
