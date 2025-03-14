@@ -6,7 +6,7 @@ from typing import Any
 import networkx as nx
 
 from .._ledger import GeneralLedgerLineImpl, LedgerElementImpl
-from ._io import read_all_dataframes
+from ._io import read_csvs
 
 
 def withholding_tax(amount: Decimal) -> Decimal:
@@ -46,7 +46,14 @@ def ledger_from_sales(
     G: nx.DiGraph | None = None,
 ) -> Sequence[GeneralLedgerLineImpl[Any, Any]]:
     """
-    Generate ledger from CSV files in the path.
+    Generate ledger from sales.
+
+    The CSV files are assumed to have columns
+    ["発生日", "金額", "振込日", "源泉徴収", "手数料"].
+    If "源泉徴収" is True, the amount would be assumed by `withholding_tax()`.
+    If "源泉徴収" if False or NaN, the amount would be assumed as 0.
+    If "源泉徴収" is numeric, the amount would be assumed as 源泉徴収額.
+    The relative path of the CSV file would be used as "取引先".
 
     Parameters
     ----------
@@ -54,6 +61,7 @@ def ledger_from_sales(
         The path to the directory containing CSV files.
     G : nx.DiGraph | None
         The graph of accounts, by default None.
+        If provided, each "取引先" would be added as a child node of "売上".
 
     Returns
     -------
@@ -68,7 +76,7 @@ def ledger_from_sales(
         If withholding tax is included in transactions with different currencies.
 
     """
-    df = read_all_dataframes(path / "sales")
+    df = read_csvs(path / "sales")
     if df.empty:
         return []
     df["取引先"] = df["path"].str.replace(".csv", "")

@@ -5,7 +5,26 @@ import pandas as pd
 from dateparser import parse
 
 
-def read_all_dataframes(path: Path) -> pd.DataFrame:
+def read_csvs(path: Path) -> pd.DataFrame:
+    """
+    Read all CSV files in the path.
+
+    The CSV files are assumed to have columns
+    ["発生日", "金額"].
+
+    Parameters
+    ----------
+    path : Path
+        The path to the directory containing CSV files.
+
+    Returns
+    -------
+    pd.DataFrame
+        The concatenated DataFrame with columns
+        ["発生日", "金額", "通貨", "path"].
+
+    """
+    # concat all CSV files in the path
     dfs = []
     for p in path.rglob("*.csv"):
         df = pd.read_csv(p)
@@ -14,6 +33,8 @@ def read_all_dataframes(path: Path) -> pd.DataFrame:
     if not dfs:
         return pd.DataFrame()
     df = pd.concat(dfs)
+
+    # parse the columns
     for k in df.columns:
         if "日" not in k:
             continue
@@ -34,5 +55,7 @@ def read_all_dataframes(path: Path) -> pd.DataFrame:
         .str.replace(r"[^\d.]", "", regex=True)
         .apply(lambda x: Decimal(str(x)))
     )
+
+    # set date as index
     df.set_index("発生日", inplace=True, drop=False)
     return df

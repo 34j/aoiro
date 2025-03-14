@@ -3,13 +3,31 @@ from pathlib import Path
 from typing import Any
 
 from .._ledger import GeneralLedgerLineImpl, LedgerElementImpl
-from ._io import read_all_dataframes
+from ._io import read_csvs
 
 
 def ledger_from_expenses(
     path: Path,
 ) -> Sequence[GeneralLedgerLineImpl[Any, Any]]:
-    df = read_all_dataframes(path / "expenses")
+    """
+    Generate ledger from expenses.
+
+    The CSV files are assumed to have columns
+    ["勘定科目"].
+    The relative path of the CSV file would be used as "取引先".
+
+    Parameters
+    ----------
+    path : Path
+        The path to the directory containing CSV files.
+
+    Returns
+    -------
+    Sequence[GeneralLedgerLineImpl[Any, Any]]
+        The ledger lines.
+
+    """
+    df = read_csvs(path / "expenses")
     if df.empty:
         return []
     df["取引先"] = df["path"]
