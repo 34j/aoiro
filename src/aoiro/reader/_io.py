@@ -115,7 +115,8 @@ def read_general_ledger(path: Path) -> Iterable[GeneralLedgerLineImpl[Any, Any]]
         The general ledger.
 
     """
-    df = read_all_csvs(path, header=None, dtype=str)
+    df = read_all_csvs(path / "general", header=None, dtype=str)
+    df.drop(columns="path", inplace=True)
     if len(df.columns) % 2 != 1:
         raise ValueError("The number of columns should be odd.")
     if len(df.columns) < 3:

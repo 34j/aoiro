@@ -22,6 +22,7 @@ from ._ledger import (
 from ._multidimensional import multidimensional_ledger_to_ledger
 from ._sheets import get_sheets
 from .reader._expenses import ledger_from_expenses
+from .reader._io import read_general_ledger
 from .reader._sales import ledger_from_sales
 
 app = typer.Typer(pretty_exceptions_enable=True)
@@ -43,7 +44,11 @@ def _main(path: Path, year: int | None = None, drop: bool = True) -> None:
 
     G = get_blue_return_accounts(patch_G)
 
-    gledger_vec = list(ledger_from_sales(path, G)) + list(ledger_from_expenses(path))
+    gledger_vec = (
+        list(ledger_from_sales(path, G))
+        + list(ledger_from_expenses(path))
+        + list(read_general_ledger(path))
+    )
     f = get_account_type_factory(G)
 
     def is_debit(x: str) -> bool:
