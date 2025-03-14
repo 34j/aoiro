@@ -5,8 +5,8 @@ from typing import Any
 
 import networkx as nx
 
+from .._ledger import GeneralLedgerLineImpl, LedgerElementImpl
 from ._io import read_all_dataframes
-from ._ledger import GeneralLedgerLineImpl, LedgerElementImpl
 
 
 def withholding_tax(amount: Decimal) -> Decimal:

@@ -2,8 +2,8 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
+from .._ledger import GeneralLedgerLineImpl, LedgerElementImpl
 from ._io import read_all_dataframes
-from ._ledger import GeneralLedgerLineImpl, LedgerElementImpl
 
 
 def ledger_from_expenses(

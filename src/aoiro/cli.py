@@ -15,14 +15,14 @@ from account_codes_jp import (
 from networkx.readwrite.text import generate_network_text
 from rich import print
 
-from ._expenses import ledger_from_expenses
 from ._ledger import (
     generalledger_to_multiledger,
     multiledger_to_ledger,
 )
 from ._multidimensional import multidimensional_ledger_to_ledger
-from ._sales import ledger_from_sales
 from ._sheets import get_sheets
+from .reader._expenses import ledger_from_expenses
+from .reader._sales import ledger_from_sales
 
 app = typer.Typer(pretty_exceptions_enable=True)
 
@@ -147,3 +147,5 @@ def _main(path: Path, year: int | None = None, drop: bool = True) -> None:
         if i == 0:
             continue
         print(f"{i}: {v}")
+
+    print("p.2")
