@@ -80,6 +80,9 @@ def ledger_from_sales(
     if df.empty:
         return []
     df["取引先"] = df["path"].str.replace(".csv", "")
+    df["源泉徴収"] = df["源泉徴収"].replace(
+        {"True": True, "False": False, "true": True, "false": False}
+    )
     df.fillna({"源泉徴収": 0, "手数料": 0}, inplace=True)
 
     if G is not None:

@@ -77,12 +77,18 @@ def _main(path: Path, year: int | None = None, drop: bool = True) -> None:
         print(line)
 
     # sales per month
+    print("sales per month")
     for month in range(1, 13):
-        G = get_sheets(
+        G_month = get_sheets(
             [line for line in gledger_now if line.date.month == month], G, drop=False
         )
-        sales = G.nodes[get_node_from_label(G, "売上")]["sum_natural"].get("", 0)
-        print(f"{month}: {sales}")
+        sales_deeper_node = get_node_from_label(
+            G,
+            "売上",
+            cond=lambda x: G.nodes[next(iter(G.predecessors(x)))]["label"] == "売上",
+        )
+        sales_deeper = G_month.nodes[sales_deeper_node]["sum_natural"].get("", 0)
+        print(f"{month}: {sales_deeper}")
 
     # start of p.1
     print("p.1")

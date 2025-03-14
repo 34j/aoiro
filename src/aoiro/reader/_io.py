@@ -35,7 +35,7 @@ def read_all_csvs(path: Path, /, **kwargs: Any) -> pd.DataFrame:
         df["path"] = p.relative_to(path).as_posix()
         dfs.append(df)
     if not dfs:
-        return pd.DataFrame()
+        return pd.DataFrame(columns=["path"])
     return pd.concat(dfs)
 
 
@@ -117,6 +117,8 @@ def read_general_ledger(path: Path) -> Iterable[GeneralLedgerLineImpl[Any, Any]]
     """
     df = read_all_csvs(path / "general", header=None, dtype=str)
     df.drop(columns="path", inplace=True)
+    if df.empty:
+        return
     if len(df.columns) % 2 != 1:
         raise ValueError("The number of columns should be odd.")
     if len(df.columns) < 3:
