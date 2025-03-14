@@ -74,6 +74,16 @@ def get_sheets(
                 G.remove_node(n)
             else:
                 G.nodes[n]["sum"] = {}
+
+    # natural sum
+    for n, d in G.nodes(data=True):
+        account_type = d["account_type"]
+        if account_type is not None:
+            G.nodes[n]["sum_natural"] = {
+                k: v * (1 if account_type.debit else -1) for k, v in d["sum"].items()
+            }
+        else:
+            G.nodes[n]["sum_natural"] = d["sum"]
     return G
 
 

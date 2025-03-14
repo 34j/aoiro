@@ -72,9 +72,17 @@ def _main(path: Path, year: int | None = None, drop: bool = True) -> None:
     G = get_sheets(gledger_now, G, drop=False)
     G_print = G.copy()
     for n, d in G_print.nodes(data=True):
-        G_print.nodes[n]["label"] = f"{d['label']}/{d['sum'].get('', 0)}"
+        G_print.nodes[n]["label"] = f"{d['label']}/{d['sum_natural'].get('', 0)}"
     for line in generate_network_text(G_print, with_labels=True):
         print(line)
+
+    # sales per month
+    for month in range(1, 13):
+        G = get_sheets(
+            [line for line in gledger_now if line.date.month == month], G, drop=False
+        )
+        sales = G.nodes[get_node_from_label(G, "売上")]["sum_natural"].get("", 0)
+        print(f"{month}: {sales}")
 
     # start of p.1
     print("p.1")
