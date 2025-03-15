@@ -55,8 +55,9 @@ def get_prices(
     df = pd.read_csv(
         path, index_col=0, skiprows=2, na_values=["*****"], parse_dates=True
     )
+    df = df[df.index.notna()]
     # fill missing dates
-    df = df.reindex(pd.date_range(df.index.min(), df.index.max()), method="ffill")
+    df = df.reindex(pd.date_range(df.index[0], df.index[-1]), method="ffill")
     return df
 
 
