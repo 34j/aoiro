@@ -18,7 +18,7 @@ from ._ledger import (
 )
 
 
-def get_currency(
+def _get_currency(
     lines: Sequence[GeneralLedgerLine[Account, Currency]],
 ) -> Sequence[Currency]:
     return np.unique([x.currency for line in lines for x in line.values])
@@ -94,7 +94,7 @@ def multidimensional_ledger_to_ledger(
     lines = sorted(lines, key=lambda x: x.date)
     prices_ = dict(prices)
     del prices
-    prices_.update(get_prices(set(get_currency(lines)) - set(prices_.keys())))
+    prices_.update(get_prices(set(_get_currency(lines)) - set(prices_.keys())))
 
     # balance of (account, currency) represented by tuple (price, amount)
     balance: dict[Account, dict[Currency, list[tuple[Decimal, Decimal]]]] = defaultdict(
