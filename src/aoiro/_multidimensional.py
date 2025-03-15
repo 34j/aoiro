@@ -45,7 +45,7 @@ def get_prices(
     """
     URL = "https://www.mizuhobank.co.jp/market/quote.csv"
     path_dir = Path("~/.cache/aoiro").expanduser()
-    path_dir.mkdir(exist_ok=True)
+    path_dir.mkdir(exist_ok=True, parents=True)
     path = path_dir / "quote.csv"
     if not path.exists():
         with path.open("w", encoding="utf-8") as f:
