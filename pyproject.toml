@@ -7,7 +7,7 @@ name = "aoiro"
 version = "0.0.3"
 description = "CSV-based 青色申告 CLI app"
 authors = [ "34j <34j.github@proton.me>" ]
-license = "GNU General Public License v3"
+license = "AGPL-3.0-only"
 readme = "README.md"
 repository = "https://github.com/34j/aoiro"
 documentation = "https://aoiro.readthedocs.io"
@@ -30,9 +30,16 @@ packages = [
 aoiro = "aoiro.cli:app"
 
 [tool.poetry.dependencies]
-python = "^3.9"
-rich = ">=10"
-typer = { extras = [ "all" ], version = "^0.15.0" }
+python = "^3.10"
+pandas = "^2.2.3"
+dateparser = "^1.2.1"
+attrs = "^25.1.0"
+rich = "^13.9.4"
+networkx = "^3.4.2"
+requests-cache = "^1.2.1"
+openpyxl = "^3.1.5"
+account-codes-jp = "^0.4.0"
+cyclopts = "^3.9.3"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"
@@ -69,6 +76,8 @@ lint.ignore = [
   "D104", # Missing docstring in public package
   "D107", # Missing docstring in `__init__`
   "D401", # First line of docstring should be in imperative mood
+  "E712",
+  "RUF001"
 ]
 lint.per-file-ignores."conftest.py" = [ "D100" ]
 lint.per-file-ignores."docs/conf.py" = [ "D100" ]

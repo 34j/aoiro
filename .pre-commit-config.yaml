@@ -44,7 +44,7 @@ repos:
     rev: v0.11.0
     hooks:
       - id: ruff
-        args: [--fix, --exit-non-zero-on-fix]
+        args: [--fix, --exit-non-zero-on-fix, --unsafe-fixes]
       - id: ruff-format
   - repo: https://github.com/codespell-project/codespell
     rev: v2.4.1
@@ -54,4 +54,4 @@ repos:
     rev: v1.15.0
     hooks:
       - id: mypy
-        additional_dependencies: []
+        additional_dependencies: [types-dateparser, attrs, types-requests]

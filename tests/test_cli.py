@@ -1,12 +1,8 @@
-from typer.testing import CliRunner
+from pathlib import Path
 
 from aoiro.cli import app
 
-runner = CliRunner()
 
-
-def test_help():
+def test_run():
     """The help message includes the CLI name."""
-    result = runner.invoke(app, ["--help"])
-    assert result.exit_code == 0
-    assert "Add the arguments and print the result" in result.stdout
+    app([(Path(__file__).parent / "test_dir").as_posix()])
