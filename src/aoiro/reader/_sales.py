@@ -120,14 +120,18 @@ def ledger_from_sales(
             )
         )
     for (t, date, currency), df_ in df.groupby(["取引先", "振込日", "通貨"]):
-        amount = Decimal(df_["金額"].sum())
+        fees = Decimal(df_["手数料"].sum())
+        receivable = Decimal(df_["金額"].sum())
+        recievable_without_fees = receivable - fees
         if currency == "":
             withholding = withholding_tax(
                 df_.loc[df_["源泉徴収"] == True, "金額"].sum()
             )
             values = [
                 LedgerElementImpl(
-                    account="事業主貸", amount=amount - withholding, currency=currency
+                    account="事業主貸",
+                    amount=recievable_without_fees - withholding,
+                    currency=currency,
                 )
             ]
             if withholding > 0:
@@ -140,15 +144,23 @@ def ledger_from_sales(
             if (df_["源泉徴収"] == True).any():
                 raise ValueError("通貨が異なる取引に源泉徴収が含まれています。")
             values = [
-                LedgerElementImpl(account="事業主貸", amount=amount, currency=currency)
+                LedgerElementImpl(
+                    account="事業主貸",
+                    amount=recievable_without_fees,
+                    currency=currency,
+                )
             ]
+        if fees > 0:
+            values.append(
+                LedgerElementImpl(account="支払手数料", amount=fees, currency=currency)
+            )
         ledger_lines.append(
             GeneralLedgerLineImpl(
                 date=date,
                 values=[
                     *values,
                     LedgerElementImpl(
-                        account="売掛金", amount=-amount, currency=currency
+                        account="売掛金", amount=-receivable, currency=currency
                     ),
                 ],
             )
