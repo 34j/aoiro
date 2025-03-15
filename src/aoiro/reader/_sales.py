@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any
 
 import networkx as nx
+import pandas as pd
 
 from .._ledger import GeneralLedgerLineImpl, LedgerElementImpl
 from ._io import read_simple_csvs
@@ -80,10 +81,13 @@ def ledger_from_sales(
     if df.empty:
         return []
     df["取引先"] = df["path"].str.replace(".csv", "")
+    df["手数料"] = df["手数料"].apply(
+        lambda x: Decimal(x) if pd.notna(x) else Decimal(0)
+    )
     df["源泉徴収"] = df["源泉徴収"].replace(
         {"True": True, "False": False, "true": True, "false": False}
     )
-    df.fillna({"源泉徴収": 0, "手数料": 0}, inplace=True)
+    df.fillna({"源泉徴収": Decimal(0)}, inplace=True)
 
     if G is not None:
         for ca in ["売上", "仮払税金"]:

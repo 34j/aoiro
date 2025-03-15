@@ -1,6 +1,5 @@
 from datetime import datetime
 from pathlib import Path
-from typing import Any
 
 # from rich import print
 import attrs
@@ -69,7 +68,7 @@ def _main(path: Path, year: int | None = None, drop: bool = True) -> None:
             .sort_index(axis=0)
         )
     gledger_now = [line for line in gledger if line.date.year == year]
-    G = get_sheets(gledger_now, G, drop=False)
+    G = get_sheets(gledger_now, G, drop=drop)
     G_print = G.copy()
     for n, d in G_print.nodes(data=True):
         G_print.nodes[n]["label"] = f"{d['label']}/{d['sum_natural'].get('', 0)}"
@@ -77,10 +76,10 @@ def _main(path: Path, year: int | None = None, drop: bool = True) -> None:
         print(line)
 
     # sales per month
-    print("sales per month")
+    print("Sales per month")
     for month in range(1, 13):
         G_month = get_sheets(
-            [line for line in gledger_now if line.date.month == month], G, drop=False
+            [line for line in gledger_now if line.date.month == month], G, drop=drop
         )
         sales_deeper_node = get_node_from_label(
             G,
@@ -89,82 +88,3 @@ def _main(path: Path, year: int | None = None, drop: bool = True) -> None:
         )
         sales_deeper = G_month.nodes[sales_deeper_node]["sum_natural"].get("", 0)
         print(f"{month}: {sales_deeper}")
-
-    # start of p.1
-    print("p.1")
-    print("損益計画書（自1月1日至12月31日）")
-    vals: list[Any] = [0]
-    vals.extend(
-        [
-            -G.nodes[get_node_from_label(G, "売上")]["sum"].get("", 0),
-            G.nodes[get_node_from_label(G, "期首商品棚卸高")]["sum"].get("", 0),
-            G.nodes[get_node_from_label(G, "仕入")]["sum"].get("", 0),
-        ]
-    )
-    vals.append(vals[2] + vals[3])
-    vals.append(G.nodes[get_node_from_label(G, "期末商品棚卸高")]["sum"].get("", 0))
-    vals.append(vals[4] - vals[5])
-    vals.append(vals[1] - vals[6])
-    for v in list(G.successors(get_node_from_label(G, "経費")))[:-1]:
-        vals.append(G.nodes[v]["sum"].get("", 0))
-    for v in G.successors(get_node_from_label(G, "経費追加")):
-        val = G.nodes[v]["sum"].get("", 0)
-        if val == 0:
-            continue
-        vals.append((G.nodes[v]["label"], val))
-    for _ in range(31 - len(vals)):
-        vals.append(0)
-    vals.append(
-        G.nodes[list(G.successors(get_node_from_label(G, "経費")))[-1]]["sum"].get(
-            "", 0
-        )
-    )
-    vals.append(G.nodes[get_node_from_label(G, "経費")]["sum"].get("", 0))
-    vals.append(vals[7] - vals[32])
-    for v in G.successors(
-        get_node_from_label(
-            G,
-            "各種引当金・準備金等",
-            lambda x: get_node_from_label(G, "収益") in G.predecessors(x),
-        )
-    ):
-        vals.append(G.nodes[v]["sum"].get("", 0))
-    for _ in range(37 - len(vals)):
-        vals.append(0)
-    vals.append(
-        G.nodes[
-            get_node_from_label(
-                G,
-                "各種引当金・準備金等",
-                lambda x: get_node_from_label(G, "収益") in G.predecessors(x),
-            )
-        ]["sum"].get("", 0)
-    )
-    for v in G.successors(
-        get_node_from_label(
-            G,
-            "各種引当金・準備金等",
-            lambda x: get_node_from_label(G, "費用") in G.predecessors(x),
-        )
-    ):
-        vals.append(G.nodes[v]["sum"].get("", 0))
-    for _ in range(42 - len(vals)):
-        vals.append(0)
-    vals.append(
-        G.nodes[
-            get_node_from_label(
-                G,
-                "各種引当金・準備金等",
-                lambda x: get_node_from_label(G, "費用") in G.predecessors(x),
-            )
-        ]["sum"].get("", 0)
-    )
-    vals.append(vals[33] + vals[37] - vals[42])
-    vals.append(min(vals[43], 650000))
-    vals.append(vals[43] - vals[44])
-    for i, v in enumerate(vals):
-        if i == 0:
-            continue
-        print(f"{i}: {v}")
-
-    print("p.2")

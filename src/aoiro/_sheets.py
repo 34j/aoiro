@@ -19,10 +19,19 @@ def get_sheets(
     Returns
     -------
     nx.DiGraph
-        Tree representation of the blue return account list
-        sum: dict[Account, Decimal]
+        Tree representation of the blue return account list.
+        Has the following attributes:
+        sum: dict[Currency, Decimal]
+            The sum of the children for each currency,
+            with alternating signs for each AccountType.
+        sum_natural: dict[Currency, Decimal]
+            The sum of the children for each currency.
+            For accounts with AccountType well-defined, the sum is not
+            altered.
+            For accounts with AccountType None, the value is the same as sum.
 
     """
+    G = G.copy()
     values = [value for line in lines for value in line.values]
     grouped = {
         k: list(v)
@@ -42,7 +51,6 @@ def get_sheets(
         raise ValueError(f"{all_accounts - all_accounts_G} not in G")
 
     # non-abstract accounts
-    G = G.copy()
     met_accounts: set[Any] = set()
     for n in reversed(list(nx.topological_sort(G))):
         d = G.nodes[n]
