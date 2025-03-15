@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.1.1 (2025-03-15)
+
+### Bug fixes
+
+- Fix fees not working (#24) ([`d79c9af`](https://github.com/34j/aoiro/commit/d79c9afb49200f7385d214abe6a38f843ffc9a6b))
+
 ## v0.1.0 (2025-03-15)
 
 ### Features
