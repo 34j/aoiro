@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 from decimal import Decimal
 from itertools import chain
-from typing import Callable, Literal, Protocol, TypeVar
+from typing import Any, Callable, Literal, Protocol, TypeVar
 
 import attrs
 import pandas as pd
@@ -12,35 +12,49 @@ Account = TypeVar("Account", bound=str)
 Currency = TypeVar("Currency", bound=str)
 
 
-class LedgerLine(Protocol[Account, Currency]):
+class _LedgerLineBase(Protocol):
     date: pd.Timestamp
+    """The date when the transaction occurred."""
+
+
+class LedgerLine(_LedgerLineBase, Protocol[Account, Currency]):
     amount: Decimal
+    """The amount. Must be non-negative."""
     currency: Currency
+    """The currency."""
     debit_account: Account
+    """The account written on the debit side."""
     credit_account: Account
+    """The account written on the credit side."""
 
 
 class LedgerElement(Protocol[Account, Currency]):
     account: Account
+    """The account."""
     amount: Decimal
+    """The amount."""
     currency: Currency
+    """The currency."""
 
 
-class MultiLedgerLine(Protocol[Account, Currency]):
-    date: pd.Timestamp
+class MultiLedgerLine(_LedgerLineBase, Protocol[Account, Currency]):
     debit: Sequence[LedgerElement[Account, Currency]]
+    """The accounts and amounts on the debit side.
+    Amounts need to be non-negative."""
     credit: Sequence[LedgerElement[Account, Currency]]
+    """The accounts and amounts on the credit side.
+    Amounts need to be non-negative."""
 
 
-class GeneralLedgerLine(Protocol[Account, Currency]):
-    date: pd.Timestamp
+class GeneralLedgerLine(_LedgerLineBase, Protocol[Account, Currency]):
     values: Sequence[LedgerElement[Account, Currency]]
+    """The accounts and amounts. Amounts does not need to be non-negative."""
 
 
 @attrs.frozen(kw_only=True)
 class LedgerLineImpl(LedgerLine[Account, Currency]):
     date: pd.Timestamp
-    amount: Decimal
+    amount: Decimal = attrs.field()
     currency: Currency
     debit_account: Account
     credit_account: Account
@@ -50,6 +64,11 @@ class LedgerLineImpl(LedgerLine[Account, Currency]):
             f"{self.date} {self.amount} {self.currency} "
             f"{self.debit_account} / {self.credit_account}"
         )
+
+    @amount.validator
+    def _validate_amount(self, attribute: Any, value: Decimal) -> None:
+        if value < Decimal(0):
+            raise ValueError("amount must be non-negative")
 
 
 @attrs.frozen(kw_only=True)
@@ -65,8 +84,8 @@ class LedgerElementImpl(LedgerElement[Account, Currency]):
 @attrs.frozen(kw_only=True, auto_detect=True)
 class MultiLedgerLineImpl(MultiLedgerLine[Account, Currency]):
     date: pd.Timestamp
-    debit: Sequence[LedgerElement[Account, Currency]]
-    credit: Sequence[LedgerElement[Account, Currency]]
+    debit: Sequence[LedgerElement[Account, Currency]] = attrs.field()
+    credit: Sequence[LedgerElement[Account, Currency]] = attrs.field()
 
     def __repr__(self) -> str:
         date = pd.Series([self.date], name="date")
@@ -82,6 +101,20 @@ class MultiLedgerLineImpl(MultiLedgerLine[Account, Currency]):
             .fillna("")
             .to_string(index=False, header=False)
         )
+
+    @debit.validator
+    def _validate_debit(
+        self, attribute: Any, value: Sequence[LedgerElement[Account, Currency]]
+    ) -> None:
+        if any(el.amount < Decimal(0) for el in value):
+            raise ValueError("amount must be non-negative")
+
+    @credit.validator
+    def _validate_credit(
+        self, attribute: Any, value: Sequence[LedgerElement[Account, Currency]]
+    ) -> None:
+        if any(el.amount < Decimal(0) for el in value):
+            raise ValueError("amount must be non-negative")
 
 
 @attrs.frozen(kw_only=True, auto_detect=True)
