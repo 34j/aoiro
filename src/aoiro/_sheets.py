@@ -21,9 +21,11 @@ def get_sheets(
     nx.DiGraph
         Tree representation of the blue return account list.
         Has the following attributes:
+
         sum: dict[Currency, Decimal]
             The sum of the children for each currency,
             with alternating signs for each AccountType.
+
         sum_natural: dict[Currency, Decimal]
             The sum of the children for each currency.
             For accounts with AccountType well-defined, the sum is not
@@ -99,4 +101,23 @@ def _dict_sum(
     ds: Sequence[dict[Any, Any]],
     /,
 ) -> dict[Any, Any]:
+    """
+    Sum dictionaries.
+
+    Return a dictionary which,
+    for any key in any of the dictionaries,
+    contains the sum of the values of that key in all dictionaries
+    where the key is present.
+
+    Parameters
+    ----------
+    ds : Sequence[dict[Any, Any]]
+        The dictionaries to sum.
+
+    Returns
+    -------
+    dict[Any, Any]
+        The sum of the dictionaries.
+
+    """
     return {k: sum([d.get(k, 0) for d in ds]) for k in set().union(*ds)}

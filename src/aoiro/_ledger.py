@@ -40,10 +40,10 @@ class LedgerElement(Protocol[Account, Currency]):
 class MultiLedgerLine(_LedgerLineBase, Protocol[Account, Currency]):
     debit: Sequence[LedgerElement[Account, Currency]]
     """The accounts and amounts on the debit side.
-    Amounts need to be non-negative."""
+    Each amount needs to be non-negative."""
     credit: Sequence[LedgerElement[Account, Currency]]
     """The accounts and amounts on the credit side.
-    Amounts need to be non-negative."""
+    Each amount needs to be non-negative."""
 
 
 class GeneralLedgerLine(_LedgerLineBase, Protocol[Account, Currency]):
@@ -124,9 +124,24 @@ class GeneralLedgerLineImpl(GeneralLedgerLine[Account, Currency]):
 
 
 def generalledger_line_to_multiledger_line(
-    line: GeneralLedgerLine[Account, Currency],
-    is_debit: Callable[[Account], bool],
+    line: GeneralLedgerLine[Account, Currency], is_debit: Callable[[Account], bool], /
 ) -> MultiLedgerLine[Account, Currency]:
+    """
+    Convert a GeneralLedgerLine to a MultiLedgerLine.
+
+    Parameters
+    ----------
+    line : GeneralLedgerLine[Account, Currency]
+        The GeneralLedgerLine to convert.
+    is_debit : Callable[[Account], bool]
+        Whether the account is a debit account.
+
+    Returns
+    -------
+    MultiLedgerLine[Account, Currency]
+        The converted MultiLedgerLine.
+
+    """
     debit = []
     credit = []
     for el in line.values:
@@ -146,8 +161,22 @@ def generalledger_line_to_multiledger_line(
 
 
 def multiledger_line_to_generalledger_line(
-    line: MultiLedgerLine[Account, Currency],
+    line: MultiLedgerLine[Account, Currency], /
 ) -> GeneralLedgerLine[Account, Currency]:
+    """
+    Convert a MultiLedgerLine to a GeneralLedgerLine.
+
+    Parameters
+    ----------
+    line : MultiLedgerLine[Account, Currency]
+        The MultiLedgerLine to convert.
+
+    Returns
+    -------
+    GeneralLedgerLine[Account, Currency]
+        The converted GeneralLedgerLine.
+
+    """
     return GeneralLedgerLineImpl(
         date=line.date,
         values=[*line.debit, *line.credit],
@@ -155,8 +184,22 @@ def multiledger_line_to_generalledger_line(
 
 
 def multiledger_line_to_ledger_line(
-    line: MultiLedgerLine[Account, Currency],
+    line: MultiLedgerLine[Account, Currency], /
 ) -> Sequence[LedgerLine[Account | AccountSundry, Currency]]:
+    """
+    Convert a MultiLedgerLine to a list of LedgerLine.
+
+    Parameters
+    ----------
+    line : MultiLedgerLine[Account, Currency]
+        The MultiLedgerLine to convert.
+
+    Returns
+    -------
+    Sequence[LedgerLine[Account | AccountSundry, Currency]]
+        The converted LedgerLines.
+
+    """
     if (
         len(line.debit) == len(line.credit) == 1
         and line.debit[0].amount == line.credit[0].amount
@@ -196,10 +239,60 @@ def generalledger_to_multiledger(
     lines: Sequence[GeneralLedgerLine[Account, Currency]],
     is_debit: Callable[[Account], bool],
 ) -> Sequence[MultiLedgerLine[Account, Currency]]:
+    """
+    Convert a GeneralLedger to a MultiLedger.
+
+    Parameters
+    ----------
+    lines : Sequence[GeneralLedgerLine[Account, Currency]]
+        The GeneralLedger to convert.
+    is_debit : Callable[[Account], bool]
+        Whether the account is a debit account.
+
+    Returns
+    -------
+    Sequence[MultiLedgerLine[Account, Currency]]
+        The converted MultiLedger.
+
+    """
     return [generalledger_line_to_multiledger_line(line, is_debit) for line in lines]
+
+
+def multiledger_to_generalledger(
+    lines: Sequence[MultiLedgerLine[Account, Currency]],
+) -> Sequence[GeneralLedgerLine[Account, Currency]]:
+    """
+    Convert a MultiLedger to a GeneralLedger.
+
+    Parameters
+    ----------
+    lines : Sequence[MultiLedgerLine[Account, Currency]]
+        The MultiLedger to convert.
+
+    Returns
+    -------
+    Sequence[GeneralLedgerLine[Account, Currency]]
+        The converted GeneralLedger.
+
+    """
+    return [multiledger_line_to_generalledger_line(line) for line in lines]
 
 
 def multiledger_to_ledger(
     lines: Sequence[MultiLedgerLine[Account, Currency]],
 ) -> Sequence[LedgerLine[Account | AccountSundry, Currency]]:
+    """
+    Convert a MultiLedger to a Ledger.
+
+    Parameters
+    ----------
+    lines : Sequence[MultiLedgerLine[Account, Currency]]
+        The MultiLedger to convert.
+
+    Returns
+    -------
+    Sequence[LedgerLine[Account | AccountSundry, Currency]]
+        The converted Ledger.
+
+    """
     return list(chain(*[multiledger_line_to_ledger_line(line) for line in lines]))

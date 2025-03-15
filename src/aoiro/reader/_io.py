@@ -40,12 +40,46 @@ def read_all_csvs(path: Path, /, **kwargs: Any) -> pd.DataFrame:
 
 
 def parse_date(s: str) -> pd.Timestamp:
+    """
+    Parse date.
+
+    Prefer the last day of the month if the day is not provided.
+
+    Parameters
+    ----------
+    s : str
+        The string to parse.
+
+    Returns
+    -------
+    pd.Timestamp
+        The parsed date.
+
+    """
     return pd.Timestamp(parse(s, settings={"PREFER_DAY_OF_MONTH": "last"}))
 
 
 def parse_money(
     s: str, currency: str | None = None
 ) -> tuple[Decimal | None, str | None]:
+    """
+    Parse money.
+
+    Parameters
+    ----------
+    s : str
+        The string to parse.
+    currency : str | None, optional
+        The currency, by default None.
+        If provided, the currency
+        in the string would be ignored and replaced by this.
+
+    Returns
+    -------
+    tuple[Decimal | None, str | None]
+        The amount and the currency.
+
+    """
     match = re.search(r"[\d.]+", s)
     if match is None:
         return None, None
