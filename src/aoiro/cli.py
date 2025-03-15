@@ -3,9 +3,9 @@ from pathlib import Path
 
 # from rich import print
 import attrs
+import cyclopts
 import networkx as nx
 import pandas as pd
-import typer
 from account_codes_jp import (
     get_account_type_factory,
     get_blue_return_accounts,
@@ -24,11 +24,25 @@ from .reader._expenses import ledger_from_expenses
 from .reader._io import read_general_ledger
 from .reader._sales import ledger_from_sales
 
-app = typer.Typer(pretty_exceptions_enable=True)
+app = cyclopts.App(name="aoiro")
 
 
-@app.command()
-def _main(path: Path, year: int | None = None, drop: bool = True) -> None:
+@app.default
+def metrics(path: Path, year: int | None = None, drop: bool = True) -> None:
+    """
+    Calculate metrics needed for tax declaration.
+
+    Parameters
+    ----------
+    path : Path
+        The path to the directory containing CSV files.
+    year : int | None, optional
+        The year to calculate, by default None.
+        If None, the previous year would be used.
+    drop : bool, optional
+        Whether to drop unused accounts, by default True.
+
+    """
     if year is None:
         year = datetime.now().year - 1
 
@@ -79,12 +93,10 @@ def _main(path: Path, year: int | None = None, drop: bool = True) -> None:
     print("Sales per month")
     for month in range(1, 13):
         G_month = get_sheets(
-            [line for line in gledger_now if line.date.month == month], G, drop=drop
+            [line for line in gledger_now if line.date.month == month], G, drop=False
         )
         sales_deeper_node = get_node_from_label(
-            G,
-            "売上",
-            cond=lambda x: G.nodes[next(iter(G.predecessors(x)))]["label"] == "売上",
+            G, "売上", lambda x: not G.nodes[x]["abstract"]
         )
         sales_deeper = G_month.nodes[sales_deeper_node]["sum_natural"].get("", 0)
         print(f"{month}: {sales_deeper}")

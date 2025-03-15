@@ -5,6 +5,7 @@ from typing import Any
 
 import networkx as nx
 import pandas as pd
+from account_codes_jp import get_node_from_label
 
 from .._ledger import GeneralLedgerLineImpl, LedgerElementImpl
 from ._io import read_simple_csvs
@@ -91,10 +92,8 @@ def ledger_from_sales(
 
     if G is not None:
         for ca in ["売上", "仮払税金"]:
-            parent_node = next(
-                n
-                for n, d in G.nodes(data=True)
-                if d["label"] == ca and not d["abstract"]
+            parent_node = get_node_from_label(
+                G, ca, lambda x: not G.nodes[x]["abstract"]
             )
             parent_node_attrs = G.nodes[parent_node]
             for t in df["取引先"].unique():
