@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.1.0 (2025-03-15)
+
+### Features
+
+- Add main feat (#10) ([`2d033c8`](https://github.com/34j/aoiro/commit/2d033c8577d68d96e0a0bd7a46b4b4d37d6a0ac0))
+
 ## v0.0.3 (2025-02-28)
 
 ### Bug fixes
