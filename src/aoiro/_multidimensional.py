@@ -2,6 +2,7 @@ from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from decimal import ROUND_DOWN, Decimal, localcontext
 from pathlib import Path
+from sys import platform
 from typing import Callable, Literal
 
 import numpy as np
@@ -53,9 +54,12 @@ def get_prices(
             r.encoding = "Shift_JIS"
             f.write(r.text)
     df = pd.read_csv(
-        path, index_col=0, skiprows=2, na_values=["*****"], parse_dates=True
+        path,
+        index_col=0,
+        skiprows=3 if platform == "win32" else 2,
+        na_values=["*****"],
+        parse_dates=True,
     )
-    df = df[df.index.notna()]
     # fill missing dates
     df = df.reindex(pd.date_range(df.index[0], df.index[-1]), method="ffill")
     return df
