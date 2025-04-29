@@ -445,13 +445,13 @@ tests = ["pytest", "pytest-cov", "pytest-xdist"]
 
 [[package]]
 name = "cyclopts"
-version = "3.13.1"
+version = "3.14.0"
 description = ""
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "cyclopts-3.13.1-py3-none-any.whl", hash = "sha256:d1a2846b4ef09c5626c2e10138963853e684df8875c689204ef7f4d647655c57"},
-    {file = "cyclopts-3.13.1.tar.gz", hash = "sha256:c2b31a07404c1e5093e3220d3c2dbc46e5a2def256bd629aca4cd5421f38695f"},
+    {file = "cyclopts-3.14.0-py3-none-any.whl", hash = "sha256:2ffcd7742158f42e177f13dfbcb06aa9a3fd196366ec6f0a95cd2aa80325f1bb"},
+    {file = "cyclopts-3.14.0.tar.gz", hash = "sha256:6a5f4fe140c43180f37d0e6f6f9340581767358bb2f61e8e7ec72e01ee59db5d"},
 ]
 
 [package.dependencies]
