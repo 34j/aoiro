@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.1.20 (2025-04-30)
+
+### Bug fixes
+
+- Update dependency cyclopts to v3.14.1 (#55) ([`adccd03`](https://github.com/34j/aoiro/commit/adccd032c3ec7ccb4c2e8f09723965158eb174e0))
+
 ## v0.1.19 (2025-04-29)
 
 ### Bug fixes
