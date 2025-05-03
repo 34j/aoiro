@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.1.23 (2025-05-03)
+
+### Bug fixes
+
+- Update dependency account-codes-jp to v0.4.12 (#59) ([`ac8cafe`](https://github.com/34j/aoiro/commit/ac8cafec1f590c05fa83b39efb46ea032758c85f))
+
 ## v0.1.22 (2025-05-03)
 
 ### Bug fixes
