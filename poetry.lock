@@ -2,13 +2,13 @@
 
 [[package]]
 name = "account-codes-jp"
-version = "0.4.12"
+version = "0.4.14"
 description = "e-Tax / EDINETタクソノミ / 青色申告 の勘定科目(コード)表のラッパー (非公式)"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "account_codes_jp-0.4.12-py3-none-any.whl", hash = "sha256:33c5ec1da431bf4acb9692caa5b89005a5e886a348d0b6ea35199cdeb4497b9d"},
-    {file = "account_codes_jp-0.4.12.tar.gz", hash = "sha256:1d8cbe14682c0a7e1ac8d3e3560e291ff1eb135002980b293c6c3a5c63c90b30"},
+    {file = "account_codes_jp-0.4.14-py3-none-any.whl", hash = "sha256:90163ea72e65841b0d9715fe2fde9a647743ac486d5266214b476abdece62f2e"},
+    {file = "account_codes_jp-0.4.14.tar.gz", hash = "sha256:40156a509125a30be76037a0bf438c60541e1e2eff8f35393ea0a6f613aa07e7"},
 ]
 
 [package.dependencies]
