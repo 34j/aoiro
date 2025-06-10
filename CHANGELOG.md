@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.1.37 (2025-06-10)
+
+### Bug fixes
+
+- Update dependency account-codes-jp to v0.4.21 (#95) ([`0f141cf`](https://github.com/34j/aoiro/commit/0f141cfc550a94bd43984bda2e66ec790689af55))
+
 ## v0.1.36 (2025-06-10)
 
 ### Bug fixes
