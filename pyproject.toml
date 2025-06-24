@@ -4,7 +4,7 @@ requires = [ "poetry-core>=1.0.0" ]
 
 [tool.poetry]
 name = "aoiro"
-version = "0.1.39"
+version = "0.1.40"
 description = "CSV-based 青色申告 CLI app"
 authors = [ "34j <34j.github@proton.me>" ]
 license = "AGPL-3.0-only"
