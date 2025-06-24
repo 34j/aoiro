@@ -445,13 +445,13 @@ tests = ["pytest", "pytest-cov", "pytest-xdist"]
 
 [[package]]
 name = "cyclopts"
-version = "3.19.0"
+version = "3.20.0"
 description = "Intuitive, easy CLIs based on type hints."
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "cyclopts-3.19.0-py3-none-any.whl", hash = "sha256:776a5747945bbafd23e007d3813b2bc4e6483adfe9f12f5684e941a726851ee4"},
-    {file = "cyclopts-3.19.0.tar.gz", hash = "sha256:0825c5dbca16c85ebbcaca8ab0952e9a2b62bacf25c704ab8cdb2ce229d46163"},
+    {file = "cyclopts-3.20.0-py3-none-any.whl", hash = "sha256:585c7dbce09d5e3cc2601f4beed31de590e7c219e235328055c0aa283382fc72"},
+    {file = "cyclopts-3.20.0.tar.gz", hash = "sha256:999aac0e3480c521d2424bf928b3a7e1288c4b3007b0e004550cd4dbb6331b06"},
 ]
 
 [package.dependencies]
