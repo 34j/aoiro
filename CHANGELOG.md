@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.1.42 (2025-06-26)
+
+### Bug fixes
+
+- Update dependency dateparser to v1.2.2 (#103) ([`102c922`](https://github.com/34j/aoiro/commit/102c922d3dd402201aac0f716d188aef03e0378c))
+
 ## v0.1.41 (2025-06-25)
 
 ### Bug fixes
