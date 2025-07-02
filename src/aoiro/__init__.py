@@ -1,4 +1,4 @@
-__version__ = "0.1.44"
+__version__ = "0.1.45"
 from ._ledger import (
     GeneralLedgerLine,
     GeneralLedgerLineImpl,
