@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.1.48 (2025-07-08)
+
+### Bug fixes
+
+- Update dependency pandas to v2.3.1 (#111) ([`65e704a`](https://github.com/34j/aoiro/commit/65e704ae24323b8c33df0137b074b1c9f3372c09))
+
 ## v0.1.47 (2025-07-03)
 
 ### Bug fixes
