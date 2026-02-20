@@ -1,3 +1,16 @@
 {
-  "extends": ["github>browniebroke/renovate-configs:python"]
+  "extends": [
+    "config:best-practices",
+    ":automergeAll",
+    ":enablePreCommit",
+    "github>34j/renovate-scientific-python-spec-0"
+  ],
+  "packageRules": [
+    {
+      "matchDepTypes": [
+        "dependencies"
+      ],
+      "rangeStrategy": "bump"
+    }
+  ]
 }
