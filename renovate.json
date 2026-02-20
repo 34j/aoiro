@@ -7,9 +7,7 @@
   ],
   "packageRules": [
     {
-      "matchDepTypes": [
-        "dependencies"
-      ],
+      "matchDepTypes": ["dependencies"],
       "rangeStrategy": "bump"
     }
   ]
