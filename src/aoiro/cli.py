@@ -28,7 +28,7 @@ app = cyclopts.App(name="aoiro")
 
 
 @app.default
-def metrics(path: Path, year: int | None = None, drop: bool = True) -> None:
+def metrics(path: Path, year: int | None = None, drop: bool = True) -> int:
     """
     Calculate metrics needed for tax declaration.
 
@@ -75,6 +75,9 @@ def metrics(path: Path, year: int | None = None, drop: bool = True) -> None:
         generalledger_to_multiledger(gledger, is_debit=is_debit)
     )
     ledger_now = [line for line in ledger if line.date.year == year]
+    if len(ledger_now) == 0:
+        print(f"No ledger lines found for year {year}")
+        return 1
     with pd.option_context("display.max_rows", None, "display.max_columns", None):
         print(
             pd.DataFrame([attrs.asdict(line) for line in ledger_now])  # type: ignore
@@ -100,3 +103,4 @@ def metrics(path: Path, year: int | None = None, drop: bool = True) -> None:
         )
         sales_deeper = G_month.nodes[sales_deeper_node]["sum_natural"].get("", 0)
         print(f"{month}: {sales_deeper}")
+    return 0

@@ -1,9 +1,9 @@
 from collections import defaultdict
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from decimal import ROUND_DOWN, Decimal, localcontext
 from pathlib import Path
 from sys import platform
-from typing import Callable, Literal
+from typing import Literal
 
 import numpy as np
 import pandas as pd
@@ -80,15 +80,17 @@ def multidimensional_ledger_to_ledger(
     At the BOY, the previous B/S sheet
     must be added as a general ledger line, for example,
 
+    >>> from datetime import datetime
+    >>> lines = []
     >>> lines.append(
-    >>>    GeneralLedgerLineImpl(
-    >>>        date=datetime(2024, 1, 1),
-    >>>        values=[
-    >>>            ("売掛金", 1000, ""),
-    >>>            ("元入金", 1000, "")
-    >>>         ]
-    >>>     )
-    >>> )
+    ...    GeneralLedgerLineImpl(
+    ...        date=datetime(2024, 1, 1),
+    ...        values=[
+    ...            ("売掛金", 1000, ""),
+    ...            ("元入金", 1000, "")
+    ...         ]
+    ...     )
+    ... )
 
     Returns
     -------
