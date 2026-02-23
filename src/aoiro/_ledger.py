@@ -1,7 +1,7 @@
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from decimal import Decimal
 from itertools import chain
-from typing import Any, Callable, Literal, Protocol, TypeVar
+from typing import Any, Literal, Protocol, TypeVar
 
 import attrs
 import pandas as pd
