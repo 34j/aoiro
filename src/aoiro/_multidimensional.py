@@ -1,9 +1,9 @@
 from collections import defaultdict
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from decimal import ROUND_DOWN, Decimal, localcontext
 from pathlib import Path
 from sys import platform
-from typing import Callable, Literal
+from typing import Literal
 
 import numpy as np
 import pandas as pd
