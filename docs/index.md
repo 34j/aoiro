@@ -1,4 +1,6 @@
-# Welcome to Aoiro documentation!
+```{include} ../README.md
+
+```
 
 ```{toctree}
 :caption: Installation & Usage
@@ -21,8 +23,4 @@ contributing
 :maxdepth: 2
 
 aoiro
-```
-
-```{include} ../README.md
-
 ```
