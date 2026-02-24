@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.0.2 (2026-02-24)
+
+### Bug fixes
+
+- Split receivable, handle minus in csv files ([`45f6fe9`](https://github.com/34j/aoiro/commit/45f6fe9d72fd21ecbfd359940cfce3899f00e9c9))
+
 ## v1.0.1 (2026-02-24)
 
 ### Bug fixes

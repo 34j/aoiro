@@ -4,7 +4,7 @@ requires = [ "setuptools>=77.0.3" ]
 
 [project]
 name = "aoiro"
-version = "1.0.1"
+version = "1.0.2"
 description = "CSV-based 青色申告 CLI app"
 readme = "README.md"
 license = "MIT"
