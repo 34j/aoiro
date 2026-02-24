@@ -109,6 +109,8 @@ def read_simple_csvs(path: Path) -> pd.DataFrame:
 
     """
     df = read_all_csvs(path, dtype=str)
+    if df.empty:
+        return df
     for col in ["発生日", "金額"]:
         if col not in df.columns:
             df[col] = None

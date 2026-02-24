@@ -28,7 +28,9 @@ app = cyclopts.App(name="aoiro")
 
 
 @app.default
-def metrics(path: Path, year: int | None = None, drop: bool = True) -> int:
+def metrics(
+    path: Path, years: str | None = None, months: str | None = None, drop: bool = True
+) -> int:
     """
     Calculate metrics needed for tax declaration.
 
@@ -36,15 +38,24 @@ def metrics(path: Path, year: int | None = None, drop: bool = True) -> int:
     ----------
     path : Path
         The path to the directory containing CSV files.
-    year : int | None, optional
+    years : str | None, optional
         The year to calculate, by default None.
         If None, the previous year would be used.
+    months : str | None, optional
+        The months to calculate, by default None.
     drop : bool, optional
         Whether to drop unused accounts, by default True.
 
     """
-    if year is None:
-        year = datetime.now().year - 1
+    if years == "all":
+        years_ = None
+    elif years is None:
+        years_ = [datetime.now().year - 1]
+    else:
+        years_ = sorted({int(y) for y in years.split(",")})
+    months_ = list(range(1, 13))
+    if months is not None:
+        months_ = sorted({int(m) for m in months.split(",")})
 
     def patch_G(G: nx.DiGraph) -> nx.DiGraph:
         G.add_node(-1, label="為替差益")
@@ -56,12 +67,12 @@ def metrics(path: Path, year: int | None = None, drop: bool = True) -> int:
         return G
 
     G = get_blue_return_accounts(patch_G)
-
     gledger_vec = (
         list(ledger_from_sales(path, G))
         + list(ledger_from_expenses(path))
         + list(read_general_ledger(path))
     )
+    gledger_vec = sorted(gledger_vec, key=lambda x: x.date)
     f = get_account_type_factory(G)
 
     def is_debit(x: str) -> bool:
@@ -71,12 +82,17 @@ def metrics(path: Path, year: int | None = None, drop: bool = True) -> int:
         return v
 
     gledger = multidimensional_ledger_to_ledger(gledger_vec, is_debit=is_debit)
+    print(gledger)
     ledger = multiledger_to_ledger(
         generalledger_to_multiledger(gledger, is_debit=is_debit)
     )
-    ledger_now = [line for line in ledger if line.date.year == year]
+    ledger_now = [
+        line
+        for line in ledger
+        if (years_ is None or line.date.year in years_) and line.date.month in months_
+    ]
     if len(ledger_now) == 0:
-        print(f"No ledger lines found for year {year}")
+        print(f"No ledger lines found for year {years}")
         return 1
     with pd.option_context("display.max_rows", None, "display.max_columns", None):
         print(
@@ -84,7 +100,12 @@ def metrics(path: Path, year: int | None = None, drop: bool = True) -> int:
             .set_index("date")
             .sort_index(axis=0)
         )
-    gledger_now = [line for line in gledger if line.date.year == year]
+    gledger_now = [
+        line
+        for line in gledger
+        if (line.date.year in years_ if years_ is not None else True)
+        and line.date.month in months_
+    ]
     G = get_sheets(gledger_now, G, drop=drop)
     G_print = G.copy()
     for n, d in G_print.nodes(data=True):
@@ -94,13 +115,21 @@ def metrics(path: Path, year: int | None = None, drop: bool = True) -> int:
 
     # sales per month
     print("Sales per month")
-    for month in range(1, 13):
-        G_month = get_sheets(
-            [line for line in gledger_now if line.date.month == month], G, drop=False
-        )
-        sales_deeper_node = get_node_from_label(
-            G, "売上", lambda x: not G.nodes[x]["abstract"]
-        )
-        sales_deeper = G_month.nodes[sales_deeper_node]["sum_natural"].get("", 0)
-        print(f"{month}: {sales_deeper}")
+    for year in years_ if years_ is not None else [datetime.now().year - 1]:
+        for month in months_:
+            G_month = get_sheets(
+                [
+                    line
+                    for line in gledger_now
+                    if (line.date.year == year if year is not None else True)
+                    and line.date.month == month
+                ],
+                G,
+                drop=False,
+            )
+            sales_deeper_node = get_node_from_label(
+                G, "売上", lambda x: not G.nodes[x]["abstract"]
+            )
+            sales_deeper = G_month.nodes[sales_deeper_node]["sum_natural"].get("", 0)
+            print(f"{month}: {sales_deeper}")
     return 0

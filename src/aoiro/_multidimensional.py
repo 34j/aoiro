@@ -135,12 +135,16 @@ def multidimensional_ledger_to_ledger(
                 while amount_left < 0:
                     # the maximum amount to subtract from the first element
                     # of the balance[account][currency]
-                    amount_substract = max(
-                        -amount_left, balance[el.account][el.currency][0][1]
+                    amount_substract = min(
+                        abs(amount_left), balance[el.account][el.currency][0][1]
                     )
-                    amount_in_quote -= (
-                        amount_substract * balance[el.account][el.currency][0][0]
-                    )
+                    with localcontext() as ctx:
+                        ctx.rounding = ROUND_DOWN
+                        amount_in_quote_substract = round(
+                            amount_substract * balance[el.account][el.currency][0][0],
+                            0,
+                        )
+                    amount_in_quote -= amount_in_quote_substract
                     amount_left += amount_substract
 
                     # subtract the amount from the balance

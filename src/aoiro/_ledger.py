@@ -123,7 +123,7 @@ class GeneralLedgerLineImpl(GeneralLedgerLine[Account, Currency]):
     values: Sequence[LedgerElement[Account, Currency]]
 
 
-def generalledger_line_to_multiledger_line(
+def generalledger_line_to_multiledger_line[Account: str, Currency: str](
     line: GeneralLedgerLine[Account, Currency], is_debit: Callable[[Account], bool], /
 ) -> MultiLedgerLine[Account, Currency]:
     """
@@ -160,7 +160,7 @@ def generalledger_line_to_multiledger_line(
     return MultiLedgerLineImpl(date=line.date, debit=debit, credit=credit)
 
 
-def multiledger_line_to_generalledger_line(
+def multiledger_line_to_generalledger_line[Account: str, Currency: str](
     line: MultiLedgerLine[Account, Currency], /
 ) -> GeneralLedgerLine[Account, Currency]:
     """
@@ -183,7 +183,7 @@ def multiledger_line_to_generalledger_line(
     )
 
 
-def multiledger_line_to_ledger_line(
+def multiledger_line_to_ledger_line[Account: str, Currency: str](
     line: MultiLedgerLine[Account, Currency], /
 ) -> Sequence[LedgerLine[Account | AccountSundry, Currency]]:
     """
@@ -235,7 +235,7 @@ def multiledger_line_to_ledger_line(
     ]
 
 
-def generalledger_to_multiledger(
+def generalledger_to_multiledger[Account: str, Currency: str](
     lines: Sequence[GeneralLedgerLine[Account, Currency]],
     is_debit: Callable[[Account], bool],
 ) -> Sequence[MultiLedgerLine[Account, Currency]]:
@@ -258,7 +258,7 @@ def generalledger_to_multiledger(
     return [generalledger_line_to_multiledger_line(line, is_debit) for line in lines]
 
 
-def multiledger_to_generalledger(
+def multiledger_to_generalledger[Account: str, Currency: str](
     lines: Sequence[MultiLedgerLine[Account, Currency]],
 ) -> Sequence[GeneralLedgerLine[Account, Currency]]:
     """
@@ -278,7 +278,7 @@ def multiledger_to_generalledger(
     return [multiledger_line_to_generalledger_line(line) for line in lines]
 
 
-def multiledger_to_ledger(
+def multiledger_to_ledger[Account: str, Currency: str](
     lines: Sequence[MultiLedgerLine[Account, Currency]],
 ) -> Sequence[LedgerLine[Account | AccountSundry, Currency]]:
     """

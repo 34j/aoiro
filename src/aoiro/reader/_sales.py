@@ -82,9 +82,13 @@ def ledger_from_sales(
     if df.empty:
         return []
     df["取引先"] = df["path"].str.replace(".csv", "")
+    if "手数料" not in df.columns:
+        df["手数料"] = Decimal(0)
     df["手数料"] = df["手数料"].apply(
         lambda x: Decimal(x) if pd.notna(x) else Decimal(0)
     )
+    if "源泉徴収" not in df.columns:
+        df["源泉徴収"] = False
     df["源泉徴収"] = df["源泉徴収"].replace(
         {"True": True, "False": False, "true": True, "false": False}
     )
