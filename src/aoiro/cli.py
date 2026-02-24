@@ -82,10 +82,8 @@ def metrics(
         return v
 
     gledger = multidimensional_ledger_to_ledger(gledger_vec, is_debit=is_debit)
-    print(gledger)
-    ledger = multiledger_to_ledger(
-        generalledger_to_multiledger(gledger, is_debit=is_debit)
-    )
+    multiledger = generalledger_to_multiledger(gledger, is_debit=is_debit)
+    ledger = multiledger_to_ledger(multiledger)
     ledger_now = [
         line
         for line in ledger

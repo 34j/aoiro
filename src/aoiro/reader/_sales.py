@@ -95,7 +95,7 @@ def ledger_from_sales(
     df.fillna({"源泉徴収": Decimal(0)}, inplace=True)
 
     if G is not None:
-        for ca in ["売上", "仮払税金"]:
+        for ca in ["売上", "売掛金", "仮払税金"]:
             parent_node = get_node_from_label(
                 G, ca, lambda x: not G.nodes[x]["abstract"]
             )
@@ -113,7 +113,9 @@ def ledger_from_sales(
                 date=date,
                 values=[
                     LedgerElementImpl(
-                        account="売掛金", amount=row["金額"], currency=row["通貨"]
+                        account=f"売掛金({row['取引先']})",
+                        amount=row["金額"],
+                        currency=row["通貨"],
                     ),
                     LedgerElementImpl(
                         account="売上" if G is None else f"売上({row['取引先']})",
@@ -164,7 +166,7 @@ def ledger_from_sales(
                 values=[
                     *values,
                     LedgerElementImpl(
-                        account="売掛金", amount=-receivable, currency=currency
+                        account=f"売掛金({t})", amount=-receivable, currency=currency
                     ),
                 ],
             )

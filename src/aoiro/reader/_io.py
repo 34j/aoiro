@@ -80,7 +80,7 @@ def parse_money(
         The amount and the currency.
 
     """
-    match = re.search(r"[\d.]+", s)
+    match = re.search(r"-?[\d.]+", s)
     if match is None:
         return None, None
     amount = Decimal(match.group())
