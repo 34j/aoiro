@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.0.1 (2026-02-24)
+
+### Bug fixes
+
+- Fix wrong multidimensional handling ([`edf505e`](https://github.com/34j/aoiro/commit/edf505e0618cb81e3745490a67ba1edc991c80fd))
+
 ## v1.0.0 (2026-02-23)
 
 ### Features
