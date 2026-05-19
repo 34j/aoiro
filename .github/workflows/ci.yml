@@ -56,7 +56,7 @@ jobs:
         shell: bash
       - run: uv run pytest
         shell: bash
-      - uses: codecov/codecov-action@v5
+      - uses: codecov/codecov-action@e79a6962e0d4c0c17b229090214935d2e33f8354 # v6
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
