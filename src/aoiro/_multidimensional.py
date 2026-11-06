@@ -51,10 +51,10 @@ def get_prices(
     path_dir.mkdir(exist_ok=True, parents=True)
     path = path_dir / "quote.csv"
     if not path.exists():
-        with path.open("w", encoding="utf-8") as f:
-            r = requests.get(url, timeout=5)
-            r.encoding = "Shift_JIS"
-            f.write(r.text)
+        r = requests.get(url, timeout=5)
+        r.raise_for_status()
+        r.encoding = "Shift_JIS"
+        path.write_text(r.text, encoding="utf-8")
     df = pd.read_csv(
         path,
         index_col=0,

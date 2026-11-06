@@ -59,6 +59,7 @@ docs = [
 
 [tool.ruff]
 extend = ".venv/ruff.toml"
+lint.extend-ignore = [ "ANN401", "COM812", "CPY001", "D212", "EM101", "EM102", "TRY003" ]
 lint.per-file-ignores."tests/**/*" = [ "S603" ]
 
 [tool.pyproject-fmt]
