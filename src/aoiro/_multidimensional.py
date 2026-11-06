@@ -22,11 +22,13 @@ from ._ledger import (
 def _get_currency(
     lines: Sequence[GeneralLedgerLine[Account, Currency]],
 ) -> Sequence[Currency]:
-    return np.unique([x.currency for line in lines for x in line.values])
+    return np.unique(
+        [x.currency for line in lines for x in line.values]  # noqa: PD011
+    )
 
 
 def get_prices(
-    currency: Iterable[Currency],
+    currency: Iterable[Currency],  # noqa: ARG001
 ) -> Mapping[Currency, "pd.Series[Decimal]"]:
     """
     Get prices of the currency indexed by date (not datetime).
@@ -44,13 +46,13 @@ def get_prices(
         The prices, indexed by date.
 
     """
-    URL = "https://www.mizuhobank.co.jp/market/quote.csv"
+    url = "https://www.mizuhobank.co.jp/market/quote.csv"
     path_dir = Path("~/.cache/aoiro").expanduser()
     path_dir.mkdir(exist_ok=True, parents=True)
     path = path_dir / "quote.csv"
     if not path.exists():
         with path.open("w", encoding="utf-8") as f:
-            r = requests.get(URL, timeout=5)
+            r = requests.get(url, timeout=5)
             r.encoding = "Shift_JIS"
             f.write(r.text)
     df = pd.read_csv(
@@ -61,17 +63,14 @@ def get_prices(
         parse_dates=True,
     )
     # fill missing dates
-    df = df.reindex(pd.date_range(df.index[0], df.index[-1]), method="ffill")
-    return df
+    return df.reindex(pd.date_range(df.index[0], df.index[-1]), method="ffill")
 
 
 def multidimensional_ledger_to_ledger(
     lines: Sequence[GeneralLedgerLine[Account, Currency]],
     is_debit: Callable[[Account], bool],
     prices: Mapping[Currency, "pd.Series[Decimal]"] = {},
-) -> Sequence[
-    GeneralLedgerLineImpl[Account | Literal["為替差益", "為替差損"], Literal[""]]
-]:
+) -> Sequence[GeneralLedgerLineImpl[Account | Literal["為替差益", "為替差損"], Literal[""]]]:
     """
     Convert multidimensional ledger to ledger.
 
@@ -83,12 +82,8 @@ def multidimensional_ledger_to_ledger(
     >>> from datetime import datetime
     >>> lines = []
     >>> lines.append(
-    ...    GeneralLedgerLineImpl(
-    ...        date=datetime(2024, 1, 1),
-    ...        values=[
-    ...            ("売掛金", 1000, ""),
-    ...            ("元入金", 1000, "")
-    ...         ]
+    ...     GeneralLedgerLineImpl(
+    ...         date=datetime(2024, 1, 1), values=[("売掛金", 1000, ""), ("元入金", 1000, "")]
     ...     )
     ... )
 
@@ -116,16 +111,14 @@ def multidimensional_ledger_to_ledger(
         profit = Decimal(0)
 
         # the values of the new line
-        values: list[
-            LedgerElement[Account | Literal["為替差益", "為替差損"], Literal[""]]
-        ] = []
+        values: list[LedgerElement[Account | Literal["為替差益", "為替差損"], Literal[""]]] = []
 
         # iterate over the values of the old line
-        for el in line.values:
+        for el in line.values:  # noqa: PD011
             amount_left = el.amount
             # skip if the currency is empty (default, exchange rate = 1)
-            if el.currency == "":
-                values.append(el)  # type: ignore
+            if not el.currency:
+                values.append(el)  # type: ignore[arg-type]
                 continue
 
             # meaning of "quote": https://docs.ccxt.com/#/?id=market-structure
@@ -135,9 +128,7 @@ def multidimensional_ledger_to_ledger(
                 while amount_left < 0:
                     # the maximum amount to subtract from the first element
                     # of the balance[account][currency]
-                    amount_substract = min(
-                        abs(amount_left), balance[el.account][el.currency][0][1]
-                    )
+                    amount_substract = min(abs(amount_left), balance[el.account][el.currency][0][1])
                     with localcontext() as ctx:
                         ctx.rounding = ROUND_DOWN
                         amount_in_quote_substract = round(
@@ -166,9 +157,7 @@ def multidimensional_ledger_to_ledger(
 
             # append to the values of the new line
             values.append(
-                LedgerElementImpl(
-                    account=el.account, amount=amount_in_quote, currency=""
-                )
+                LedgerElementImpl(account=el.account, amount=amount_in_quote, currency="")
             )
 
             # add to the profit

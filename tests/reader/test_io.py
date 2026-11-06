@@ -2,7 +2,7 @@ from decimal import Decimal
 
 import pandas as pd
 
-from aoiro.reader._io import parse_date, parse_money
+from aoiro.reader._io import parse_date, parse_money  # noqa: PLC2701
 
 
 def test_parse_date():

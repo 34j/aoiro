@@ -7,8 +7,8 @@ import networkx as nx
 import pandas as pd
 from account_codes_jp import get_node_from_label
 
-from .._ledger import GeneralLedgerLineImpl, LedgerElementImpl
-from ._io import read_simple_csvs
+from aoiro._ledger import GeneralLedgerLineImpl, LedgerElementImpl
+from aoiro.reader._io import read_simple_csvs
 
 
 def withholding_tax(amount: Decimal) -> Decimal:
@@ -32,20 +32,18 @@ def withholding_tax(amount: Decimal) -> Decimal:
     """
     with localcontext() as ctx:
         ctx.rounding = ROUND_DOWN
-        if amount > 1000000:
+        threshold = Decimal(1_000_000)
+        if amount > threshold:
             return round(
-                Decimal(
-                    1000000 * Decimal("0.1021") + (amount - 1000000) * Decimal("0.2042")
-                ),
+                threshold * Decimal("0.1021") + (amount - threshold) * Decimal("0.2042"),
                 0,
             )
-        else:
-            return round(amount * Decimal("0.1021"), 0)
+        return round(amount * Decimal("0.1021"), 0)
 
 
-def ledger_from_sales(
+def ledger_from_sales(  # noqa: C901
     path: Path,
-    G: nx.DiGraph | None = None,
+    G: nx.DiGraph | None = None,  # noqa: N803
 ) -> Sequence[GeneralLedgerLineImpl[Any, Any]]:
     """
     Generate ledger from sales.
@@ -84,21 +82,20 @@ def ledger_from_sales(
     df["取引先"] = df["path"].str.replace(".csv", "")
     if "手数料" not in df.columns:
         df["手数料"] = Decimal(0)
-    df["手数料"] = df["手数料"].apply(
-        lambda x: Decimal(x) if pd.notna(x) else Decimal(0)
-    )
+    df["手数料"] = df["手数料"].apply(lambda x: Decimal(x) if pd.notna(x) else Decimal(0))
     if "源泉徴収" not in df.columns:
         df["源泉徴収"] = False
-    df["源泉徴収"] = df["源泉徴収"].replace(
-        {"True": True, "False": False, "true": True, "false": False}
-    )
-    df.fillna({"源泉徴収": Decimal(0)}, inplace=True)
+    df["源泉徴収"] = df["源泉徴収"].replace({
+        "True": True,
+        "False": False,
+        "true": True,
+        "false": False,
+    })
+    df = df.fillna({"源泉徴収": Decimal(0)})
 
     if G is not None:
         for ca in ["売上", "売掛金", "仮払税金"]:
-            parent_node = get_node_from_label(
-                G, ca, lambda x: not G.nodes[x]["abstract"]
-            )
+            parent_node = get_node_from_label(G, ca, lambda x: not G.nodes[x]["abstract"])
             parent_node_attrs = G.nodes[parent_node]
             for t in df["取引先"].unique():
                 t_attrs = {**parent_node_attrs, "label": f"{ca}({t})"}
@@ -129,10 +126,8 @@ def ledger_from_sales(
         fees = Decimal(df_["手数料"].sum())
         receivable = Decimal(df_["金額"].sum())
         recievable_without_fees = receivable - fees
-        if currency == "":
-            withholding = withholding_tax(
-                df_.loc[df_["源泉徴収"] == True, "金額"].sum()
-            )
+        if not currency:
+            withholding = withholding_tax(df_.loc[df_["源泉徴収"].eq(other=True), "金額"].sum())
             values = [
                 LedgerElementImpl(
                     account="事業主貸",
@@ -147,7 +142,7 @@ def ledger_from_sales(
                     )
                 )
         else:
-            if (df_["源泉徴収"] == True).any():
+            if df_["源泉徴収"].eq(other=True).any():
                 raise ValueError("通貨が異なる取引に源泉徴収が含まれています。")
             values = [
                 LedgerElementImpl(
@@ -157,9 +152,7 @@ def ledger_from_sales(
                 )
             ]
         if fees > 0:
-            values.append(
-                LedgerElementImpl(account="支払手数料", amount=fees, currency=currency)
-            )
+            values.append(LedgerElementImpl(account="支払手数料", amount=fees, currency=currency))
         ledger_lines.append(
             GeneralLedgerLineImpl(
                 date=date,

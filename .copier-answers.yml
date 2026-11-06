@@ -1,22 +1,19 @@
 # Changes here will be overwritten by Copier
-_commit: af9b795
-_src_path: gh:34j/pypackage-template
-cli_name: aoiro
+_commit: cba0ccb
+_src_path: gh:34j/pypackage-template-fork
 copyright_year: '2025'
 documentation: true
-email: 34j.github@proton.me
-full_name: 34j
-github_username: 34j
+github_user: 34j
 has_cli: true
 initial_commit: false
-is_django_package: false
+module_name: aoiro
 open_source_license: MIT
-open_with_editor: true
-package_name: aoiro
+open_with_editor: false
 project_name: Aoiro
 project_short_description: CSV-based 青色申告 CLI app
 project_slug: aoiro
 run_uv_sync: false
-setup_github: false
 setup_pre_commit: false
+user_name: 34j
+version: 1.0.2
 
