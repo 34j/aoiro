@@ -100,7 +100,7 @@ $ tree .
 
 1. 最も基本的な形式は`general`ディレクトリ内にある一般化仕訳帳を表すCSVファイル群であり、次のようなヘッダー**なし**CSVファイルである。
 
-```text
+```csv
 2025-01-01,現金,1000,売上,1000
 2025-01-03,現金,10USD,現金,-1000
 2025-01-02,消耗品,USD 8,現金,USD -10,土地,1 LandX
@@ -111,14 +111,14 @@ $ tree .
 - 第3行では、消耗品及び土地の購入を行っている。土地の相場は変化する可能性があるため、通貨`LandX`を導入する。
 - 本プロジェクトはあくまで集計機としての立場（`groupby` + `sum`）をとり、「決算」の概念に直接対応していないため、昨年の賃借対照表を次のように入力する必要がある。例えば、次の例では、前期の期末時点で未入金の売掛金1000円、買掛金500円を繰り入れている。
 
-```text
+```csv
 2025-01-01,売掛金,1000,元入金,1000
 2025-01-01,買掛金,500,元入金,-500
 ```
 
 1. `expenses`は経費を表すCSVファイル群であり、次のようなヘッダー**あり**CSVファイルである。
 
-```text
+```csv
 発生日,勘定科目,金額
 2025-01-01,消耗品費,1000
 ```
@@ -127,7 +127,7 @@ $ tree .
 
 1. `sales`は売上を表すCSVファイル群であり、次のようなヘッダー**あり**CSVファイルである。
 
-```text
+```csv
 発生日,振込日,金額,源泉徴収,手数料
 2024-12,2025-01-20,1234,true,100
 ```
@@ -200,3 +200,33 @@ Sales per month
 
 仮払税金が想定される源泉徴収額であるが、実際には異なる場合があるため、支払調書を確認されたい。
 上記の情報は、青色申告決算書を作成するにあたっては十分である。作成にあたっては、[国税庁 確定申告書等作成コーナー](https://www.keisan.nta.go.jp/kyoutu/ky/sm/top#bsctrl)が便利である。本プロジェクトでは、青色申告決算書の作成への対応は行わない。（あまりにも難しいため。大量の仕様書は[こちら](https://www.e-tax.nta.go.jp/shiyo/index.htm)。）
+
+## Contributors ✨
+
+Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
+
+<!-- prettier-ignore-start -->
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- markdownlint-disable -->
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/34j"><img src="https://avatars.githubusercontent.com/u/55338215?v=4?s=80" width="80px;" alt="34j"/><br /><sub><b>34j</b></sub></a><br /><a href="https://github.com/34j/aoiro/commits?author=34j" title="Code">💻</a> <a href="#ideas-34j" title="Ideas, Planning, & Feedback">🤔</a> <a href="https://github.com/34j/aoiro/commits?author=34j" title="Documentation">📖</a></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- markdownlint-restore -->
+<!-- ALL-CONTRIBUTORS-LIST:END -->
+<!-- prettier-ignore-end -->
+
+This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!
+
+## Credits
+
+[![Copier](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/copier-org/copier/master/img/badge/badge-grayscale-inverted-border-orange.json)](https://github.com/copier-org/copier)
+
+This package was created with
+[Copier](https://copier.readthedocs.io/) and the
+[browniebroke/pypackage-template](https://github.com/browniebroke/pypackage-template)
+project template.
