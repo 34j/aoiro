@@ -8,7 +8,7 @@ from typing import Any
 import pandas as pd
 from dateparser import parse
 
-from .._ledger import GeneralLedgerLineImpl, LedgerElementImpl
+from aoiro._ledger import GeneralLedgerLineImpl, LedgerElementImpl
 
 
 def read_all_csvs(path: Path, /, **kwargs: Any) -> pd.DataFrame:
@@ -55,13 +55,19 @@ def parse_date(s: str) -> pd.Timestamp:
     pd.Timestamp
         The parsed date.
 
+    Raises
+    ------
+    ValueError
+        If the string cannot be parsed as a date.
+
     """
-    return pd.Timestamp(parse(s, settings={"PREFER_DAY_OF_MONTH": "last"}))
+    parsed = parse(s, settings={"PREFER_DAY_OF_MONTH": "last"})
+    if parsed is None:
+        raise ValueError(f"Could not parse date: {s}")
+    return pd.Timestamp(parsed)
 
 
-def parse_money(
-    s: str, currency: str | None = None
-) -> tuple[Decimal | None, str | None]:
+def parse_money(s: str, currency: str | None = None) -> tuple[Decimal | None, str | None]:
     """
     Parse money.
 
@@ -122,13 +128,10 @@ def read_simple_csvs(path: Path) -> pd.DataFrame:
         df[k] = df[k].map(parse_date)
 
     # parse money
-    df[["金額", "通貨"]] = pd.DataFrame(
-        df["金額"].map(parse_money).tolist(), index=df.index
-    )
+    df[["金額", "通貨"]] = pd.DataFrame(df["金額"].map(parse_money).tolist(), index=df.index)
 
     # set date as index
-    df.set_index("発生日", inplace=True, drop=False)
-    return df
+    return df.set_index("発生日", drop=False)
 
 
 def read_general_ledger(path: Path) -> Iterable[GeneralLedgerLineImpl[Any, Any]]:
@@ -145,19 +148,24 @@ def read_general_ledger(path: Path) -> Iterable[GeneralLedgerLineImpl[Any, Any]]
     path : Path
         The path to the CSV file.
 
-    Returns
-    -------
-    Iterable[GeneralLedgerLineImpl[Any, Any]]
-        The general ledger.
+    Yields
+    ------
+    GeneralLedgerLineImpl[Any, Any]
+        The general ledger lines.
+
+    Raises
+    ------
+    ValueError
+        If the general ledger has an invalid number of columns.
 
     """
     df = read_all_csvs(path / "general", header=None, dtype=str)
-    df.drop(columns="path", inplace=True)
+    df = df.drop(columns="path")
     if df.empty:
         return
     if len(df.columns) % 2 != 1:
         raise ValueError("The number of columns should be odd.")
-    if len(df.columns) < 3:
+    if len(df.columns) < 3:  # noqa: PLR2004
         raise ValueError("The number of columns should be at least 3.")
     for _, row in df.iterrows():
         values: list[LedgerElementImpl[Any, Any]] = []

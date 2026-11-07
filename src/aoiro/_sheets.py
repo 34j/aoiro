@@ -9,7 +9,7 @@ from ._ledger import Account, Currency, GeneralLedgerLine
 
 def get_sheets(
     lines: Sequence[GeneralLedgerLine[Account, Currency]],
-    G: nx.DiGraph,
+    G: nx.DiGraph,  # noqa: N803
     *,
     drop: bool = True,
 ) -> nx.DiGraph:
@@ -32,8 +32,13 @@ def get_sheets(
             altered.
             For accounts with AccountType None, the value is the same as sum.
 
+    Raises
+    ------
+    ValueError
+        If an account is not in the graph.
+
     """
-    G = G.copy()
+    graph = G.copy()
     values = [value for line in lines for value in line.values]
     grouped = {
         k: list(v)
@@ -42,35 +47,29 @@ def get_sheets(
             key=lambda x: (x.account, x.currency),
         )
     }
-    grouped_nested = {
-        k: dict(v) for k, v in groupby(grouped.items(), key=lambda x: x[0][0])
-    }
+    grouped_nested = {k: dict(v) for k, v in groupby(grouped.items(), key=lambda x: x[0][0])}
 
     # Check that all accounts are in G
     all_accounts = set(grouped_nested.keys())
-    all_accounts_G = {d["label"] for n, d in G.nodes(data=True) if not d["abstract"]}
-    if all_accounts - all_accounts_G:
-        raise ValueError(f"{all_accounts - all_accounts_G} not in G")
+    all_accounts_graph = {d["label"] for n, d in graph.nodes(data=True) if not d["abstract"]}
+    if all_accounts - all_accounts_graph:
+        raise ValueError(f"{all_accounts - all_accounts_graph} not in G")
 
     # non-abstract accounts
     met_accounts: set[Any] = set()
-    for n in reversed(list(nx.topological_sort(G))):
-        d = G.nodes[n]
-        successors = list(G.successors(n))
-        add_current = (not d["abstract"]) and d["label"] in (
-            all_accounts - met_accounts
-        )
+    for n in reversed(list(nx.topological_sort(graph))):
+        d = graph.nodes[n]
+        successors = list(graph.successors(n))
+        add_current = (not d["abstract"]) and d["label"] in (all_accounts - met_accounts)
         if successors or add_current:
-            G.nodes[n]["sum"] = _dict_sum(
-                [G.nodes[child]["sum"] for child in successors]
+            graph.nodes[n]["sum"] = _dict_sum(
+                [graph.nodes[child]["sum"] for child in successors]
                 + (
                     [
                         {
                             currency: sum(el.amount for el in values)
                             * (1 if d["account_type"].debit else -1)
-                            for (_, currency), values in grouped_nested[
-                                d["label"]
-                            ].items()
+                            for (_, currency), values in grouped_nested[d["label"]].items()
                         }
                     ]
                     if add_current
@@ -79,22 +78,21 @@ def get_sheets(
             )
             if add_current:
                 met_accounts.add(d["label"])
+        elif drop:
+            graph.remove_node(n)
         else:
-            if drop:
-                G.remove_node(n)
-            else:
-                G.nodes[n]["sum"] = {}
+            graph.nodes[n]["sum"] = {}
 
     # natural sum
-    for n, d in G.nodes(data=True):
+    for n, d in graph.nodes(data=True):
         account_type = d["account_type"]
         if account_type is not None:
-            G.nodes[n]["sum_natural"] = {
+            graph.nodes[n]["sum_natural"] = {
                 k: v * (1 if account_type.debit else -1) for k, v in d["sum"].items()
             }
         else:
-            G.nodes[n]["sum_natural"] = d["sum"]
-    return G
+            graph.nodes[n]["sum_natural"] = d["sum"]
+    return graph
 
 
 def _dict_sum(
@@ -120,4 +118,4 @@ def _dict_sum(
         The sum of the dictionaries.
 
     """
-    return {k: sum([d.get(k, 0) for d in ds]) for k in set().union(*ds)}
+    return {k: sum(d.get(k, 0) for d in ds) for k in set().union(*ds)}
