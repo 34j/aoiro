@@ -32,7 +32,7 @@ dependencies = [
   "openpyxl>=3.1.5",
   "pandas>=2.3.3",
   "requests-cache>=1.3",
-  "rich>=10",
+  "rich>=10.16.2",
 ]
 urls."Bug Tracker" = "https://github.com/34j/aoiro/issues"
 urls.Changelog = "https://github.com/34j/aoiro/blob/main/CHANGELOG.md"
